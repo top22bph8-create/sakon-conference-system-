@@ -21,7 +21,8 @@
   </div>
 </div>
 
-<!-- React + ReactDOM ฝังอยู่ในไฟล์นี้ทั้งหมดแล้ว ไม่ต้องใช้อินเทอร์เน็ตหรือ CDN ภายนอกใดๆ -->
+<!-- React + ReactDOM ฝังอยู่ในไฟล์นี้ทั้งหมด ไม่ต้องใช้ CDN ภายนอก -->
+<!-- ยกเว้นการเชื่อมต่อ Firebase Realtime Database ซึ่งต้องใช้อินเทอร์เน็ต -->
 <script>
 /**
  * @license React
@@ -2232,11 +2233,53 @@ const NAV = [{
   icon: Users,
   adminOnly: true
 }];
+
+/* ----------------------------------------------------------------------
+   เชื่อมต่อ Firebase Realtime Database
+   (ใช้ REST API ตรงๆ ผ่าน fetch — ไม่ต้องติดตั้ง Firebase SDK เพิ่ม)
+---------------------------------------------------------------------- */
+const FIREBASE_DB_URL = "https://sakonnakhon2569-default-rtdb.asia-southeast1.firebasedatabase.app";
+function saveSubmissionsToFirebase(list) {
+  const obj = {};
+  list.forEach(s => {
+    obj[s.id] = s;
+  });
+  fetch(FIREBASE_DB_URL + "/submissions.json", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(obj)
+  }).catch(err => console.error("บันทึกขึ้น Firebase ไม่สำเร็จ:", err));
+}
 function App() {
   const [tab, setTab] = useState("dashboard");
   const [role, setRole] = useState("admin"); // 'public' | 'admin' — ตัวสลับมุมมองเดโม
   const [navOpen, setNavOpen] = useState(true);
-  const [submissions, setSubmissions] = useState(seedSubmissions);
+  const [submissions, setSubmissionsRaw] = useState(seedSubmissions);
+  const [dbStatus, setDbStatus] = useState("loading"); // 'loading' | 'connected' | 'error'
+
+  // โหลดข้อมูลจาก Firebase ตอนเปิดหน้าเว็บครั้งแรก
+  React.useEffect(() => {
+    fetch(FIREBASE_DB_URL + "/submissions.json").then(r => r.json()).then(data => {
+      if (data && Object.keys(data).length > 0) {
+        setSubmissionsRaw(Object.values(data));
+      } else {
+        // ฐานข้อมูลยังว่าง — ใส่ข้อมูลตัวอย่างเริ่มต้นลงไปให้
+        saveSubmissionsToFirebase(seedSubmissions);
+      }
+      setDbStatus("connected");
+    }).catch(err => {
+      console.error("โหลดข้อมูลจาก Firebase ไม่สำเร็จ:", err);
+      setDbStatus("error");
+    });
+  }, []);
+
+  // ทุกครั้งที่มีการเปลี่ยนรายการผลงาน (ส่งใหม่ / แก้ไข / อนุมัติ) ให้บันทึกขึ้น Firebase ด้วยทันที
+  const setSubmissions = next => {
+    setSubmissionsRaw(next);
+    saveSubmissionsToFirebase(next);
+  };
   const visibleNav = NAV.filter(n => !n.adminOnly || role === "admin");
   return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -2429,6 +2472,8 @@ function App() {
       marginLeft: "auto"
     }
   }, /*#__PURE__*/React.createElement(Badge, {
+    tone: dbStatus === "connected" ? "success" : dbStatus === "error" ? "danger" : "warn"
+  }, dbStatus === "connected" ? "เชื่อมฐานข้อมูลแล้ว" : dbStatus === "error" ? "เชื่อมฐานข้อมูลไม่สำเร็จ" : "กำลังเชื่อมฐานข้อมูล..."), /*#__PURE__*/React.createElement(Badge, {
     tone: role === "admin" ? "info" : "success"
   }, role === "admin" ? "มุมมองแอดมิน" : "มุมมองสาธารณะ"))), /*#__PURE__*/React.createElement("div", {
     style: {
