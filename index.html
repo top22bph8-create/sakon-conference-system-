@@ -394,6 +394,144 @@ async function downloadSubmissionFile(s,key,downloadingId,setDownloadingId){cons
 if(s[urlKey]){trackEvent("download");window.open(s[urlKey],"_blank");return;}// ยุคใหม่สุด: Firebase Storage
 if(s[key]){triggerFileDownload(s[key]);return;}// ยุคเก่าสุด: ไฟล์ฝังอยู่ในตัว submission แล้ว
 const uniqueKey=s.id+"-"+key;setDownloadingId(uniqueKey);try{const res=await fetch(FIREBASE_DB_URL+"/submission_files/"+s.id+".json");const data=await res.json();if(data&&data[key]){triggerFileDownload(data[key]);}else{alert("ไม่พบไฟล์นี้ในระบบ อาจเกิดจากการอัปโหลดไม่สมบูรณ์");}}catch(err){alert("ดาวน์โหลดไฟล์ไม่สำเร็จ: "+err.message);}setDownloadingId(null);}// ส่งออกรายงานเป็นไฟล์ Word (.doc) — ใช้เทคนิค HTML-in-.doc ที่ Microsoft Word เปิดได้โดยตรง ไม่ต้องพึ่งไลบรารีภายนอก
+// ตัวสร้างไฟล์ ZIP แบบง่าย (เก็บไฟล์แบบไม่บีบอัด — STORE method) เขียนด้วย JS ล้วน ไม่พึ่งไลบรารีภายนอก
+function crc32(bytes) {
+  if (!crc32.table) {
+    const table = [];
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = c & 1 ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      table[n] = c >>> 0;
+    }
+    crc32.table = table;
+  }
+  let crc = 0 ^ (-1);
+  for (let i = 0; i < bytes.length; i++) {
+    crc = (crc >>> 8) ^ crc32.table[(crc ^ bytes[i]) & 0xFF];
+  }
+  return (crc ^ (-1)) >>> 0;
+}
+
+function strToUtf8Bytes(str) {
+  return new TextEncoder().encode(str);
+}
+
+function dosDateTime(date) {
+  const time = ((date.getHours() & 0x1F) << 11) | ((date.getMinutes() & 0x3F) << 5) | ((date.getSeconds() >> 1) & 0x1F);
+  const dosDate = (((date.getFullYear() - 1980) & 0x7F) << 9) | (((date.getMonth() + 1) & 0xF) << 5) | (date.getDate() & 0x1F);
+  return { time, dosDate };
+}
+
+class SimpleZipWriter {
+  constructor() {
+    this.entries = []; // { nameBytes, data, crc, size }
+  }
+  addFile(name, uint8arr) {
+    const nameBytes = strToUtf8Bytes(name.replace(/\\/g, "/"));
+    this.entries.push({ nameBytes, data: uint8arr, crc: crc32(uint8arr), size: uint8arr.length });
+  }
+  generate() {
+    const now = new Date();
+    const { time, dosDate } = dosDateTime(now);
+    const localParts = [];
+    const centralParts = [];
+    let offset = 0;
+
+    for (const e of this.entries) {
+      // Local file header
+      const local = new Uint8Array(30 + e.nameBytes.length);
+      const lv = new DataView(local.buffer);
+      lv.setUint32(0, 0x04034b50, true);
+      lv.setUint16(4, 20, true); // version needed
+      lv.setUint16(6, 0x0800, true); // flags: UTF-8 filename
+      lv.setUint16(8, 0, true); // method: store
+      lv.setUint16(10, time, true);
+      lv.setUint16(12, dosDate, true);
+      lv.setUint32(14, e.crc, true);
+      lv.setUint32(18, e.size, true); // compressed size
+      lv.setUint32(22, e.size, true); // uncompressed size
+      lv.setUint16(26, e.nameBytes.length, true);
+      lv.setUint16(28, 0, true); // extra length
+      local.set(e.nameBytes, 30);
+
+      localParts.push(local, e.data);
+
+      // Central directory header
+      const central = new Uint8Array(46 + e.nameBytes.length);
+      const cv = new DataView(central.buffer);
+      cv.setUint32(0, 0x02014b50, true);
+      cv.setUint16(4, 20, true); // version made by
+      cv.setUint16(6, 20, true); // version needed
+      cv.setUint16(8, 0x0800, true);
+      cv.setUint16(10, 0, true);
+      cv.setUint16(12, time, true);
+      cv.setUint16(14, dosDate, true);
+      cv.setUint32(16, e.crc, true);
+      cv.setUint32(20, e.size, true);
+      cv.setUint32(24, e.size, true);
+      cv.setUint16(28, e.nameBytes.length, true);
+      cv.setUint16(30, 0, true); // extra length
+      cv.setUint16(32, 0, true); // comment length
+      cv.setUint16(34, 0, true); // disk number
+      cv.setUint16(36, 0, true); // internal attrs
+      cv.setUint32(38, 0, true); // external attrs
+      cv.setUint32(42, offset, true); // local header offset
+      central.set(e.nameBytes, 46);
+
+      centralParts.push(central);
+      offset += local.length + e.data.length;
+    }
+
+    const centralSize = centralParts.reduce((a, b) => a + b.length, 0);
+    const centralOffset = offset;
+
+    const eocd = new Uint8Array(22);
+    const ev = new DataView(eocd.buffer);
+    ev.setUint32(0, 0x06054b50, true);
+    ev.setUint16(4, 0, true);
+    ev.setUint16(6, 0, true);
+    ev.setUint16(8, this.entries.length, true);
+    ev.setUint16(10, this.entries.length, true);
+    ev.setUint32(12, centralSize, true);
+    ev.setUint32(16, centralOffset, true);
+    ev.setUint16(20, 0, true);
+
+    const allParts = [...localParts, ...centralParts, eocd];
+    const totalLen = allParts.reduce((a, b) => a + b.length, 0);
+    const result = new Uint8Array(totalLen);
+    let pos = 0;
+    for (const p of allParts) { result.set(p, pos); pos += p.length; }
+    return result;
+  }
+}
+
+async function sourceToBytes(source) {
+  if (!source) return null;
+  if (source.startsWith("data:")) {
+    const base64 = source.split(",")[1];
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  }
+  const res = await fetch(source);
+  const buf = await res.arrayBuffer();
+  return new Uint8Array(buf);
+}
+
+function sanitizeFileName(name) {
+  return String(name || "").replace(/[\\/:*?"<>|]/g, "_").trim().slice(0, 80) || "ไม่ระบุชื่อ";
+}
+
+function triggerBlobDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
 function exportReportToWord(title,htmlBody,filename){const fullHtml=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
     <head><meta charset="utf-8"><title>${title}</title>
     <style>
@@ -404,8 +542,141 @@ function exportReportToWord(title,htmlBody,filename){const fullHtml=`<html xmlns
       td, th { border: 1px solid #999; padding: 6pt 10pt; font-size: 14pt; }
       th { background: #E4F4EC; }
     </style></head>
-    <body>${htmlBody}</body></html>`;const blob=new Blob(["\ufeff",fullHtml],{type:"application/msword"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=filename+".doc";a.click();URL.revokeObjectURL(url);}function ReportsPage({submissions,setSubmissions}){const[filterType,setFilterType]=useState("all");const[filterAmphoe,setFilterAmphoe]=useState("all");const[search,setSearch]=useState("");const[certFor,setCertFor]=useState(null);const[editFor,setEditFor]=useState(null);const[expandedId,setExpandedId]=useState(null);const[downloadingId,setDownloadingId]=useState(null);const amphoeOptions=React.useMemo(()=>Array.from(new Set(submissions.map(s=>s.amphoe).filter(Boolean))).sort(),[submissions]);const list=submissions.filter(s=>filterType==="all"||s.main===filterType).filter(s=>filterAmphoe==="all"||s.amphoe===filterAmphoe).filter(s=>!search.trim()||(s.name+s.unit+s.title).toLowerCase().includes(search.trim().toLowerCase()));const deleteSubmission=s=>{if(!window.confirm(`ลบผลงาน "${s.title}" ของ ${s.name} ออกจากระบบถาวร?`))return;if(s.fileDeleteUrl)window.open(s.fileDeleteUrl,"_blank");// ลบไฟล์แนบ (Word/PDF) ที่เก็บแยกไว้ด้วย ป้องกันข้อมูลไฟล์ค้างเปล่าประโยชน์ในระบบ (กินพื้นที่โดยไม่จำเป็น)
-if(s.hasFiles){fetch(FIREBASE_DB_URL+"/submission_files/"+s.id+".json",{method:"DELETE"}).catch(()=>{});}setSubmissions(submissions.filter(x=>x.id!==s.id));};return/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement(SectionTitle,{hideBrand:true,eyebrow:"สำหรับคณะกรรมการ",title:"รายงานและดาวน์โหลดผลงานจริง",desc:"รวมรายชื่อผู้ส่งผลงานทุกประเภทพร้อมข้อมูลส่วนตัวไว้ในที่เดียว กรองตามประเภทหรืออำเภอ พร้อมดาวน์โหลดไฟล์จริง ออกเกียรติบัตร แก้ไข หรือลบได้ในหน้าเดียว"}),/*#__PURE__*/React.createElement("div",{style:{display:"flex",gap:10,marginBottom:18,flexWrap:"wrap",alignItems:"center"}},/*#__PURE__*/React.createElement("select",{value:filterType,onChange:e=>setFilterType(e.target.value),style:{...selStyle,width:"auto",marginTop:0}},/*#__PURE__*/React.createElement("option",{value:"all"},"ทุกประเภท (",submissions.length,")"),Object.values(CATS).map(c=>/*#__PURE__*/React.createElement("option",{key:c.key,value:c.key},c.label," (",submissions.filter(s=>s.main===c.key).length,")"))),/*#__PURE__*/React.createElement("select",{value:filterAmphoe,onChange:e=>setFilterAmphoe(e.target.value),style:{...selStyle,width:"auto",marginTop:0}},/*#__PURE__*/React.createElement("option",{value:"all"},"ทุกอำเภอ"),amphoeOptions.map(a=>/*#__PURE__*/React.createElement("option",{key:a,value:a},a," (",submissions.filter(s=>s.amphoe===a).length,")"))),/*#__PURE__*/React.createElement("input",{value:search,onChange:e=>setSearch(e.target.value),placeholder:"ค้นหาชื่อผู้ส่ง / หน่วยบริการ / ชื่อผลงาน",style:{...selStyle,width:"100%",maxWidth:280,marginTop:0}})),/*#__PURE__*/React.createElement("div",{style:{background:"#fff",border:"1px solid var(--border)",borderRadius:16,overflow:"hidden"}},/*#__PURE__*/React.createElement("div",{style:{overflowX:"auto"}},/*#__PURE__*/React.createElement("table",{style:{width:"100%",borderCollapse:"collapse",fontFamily:"Sarabun, sans-serif",fontSize:13.5}},/*#__PURE__*/React.createElement("thead",null,/*#__PURE__*/React.createElement("tr",{style:{background:"var(--bg)",textAlign:"left"}},["ลำดับ","ผู้ส่งผลงาน","ข้อมูลส่วนตัว","ชื่อผลงาน","ประเภท","รางวัล","ไฟล์ผลงานจริง","เกียรติบัตร","จัดการ"].map(h=>/*#__PURE__*/React.createElement("th",{key:h,style:{padding:"10px 16px",fontWeight:600,color:"var(--text-muted)",whiteSpace:"nowrap"}},h)))),/*#__PURE__*/React.createElement("tbody",null,list.map((s,i)=>/*#__PURE__*/React.createElement(React.Fragment,{key:s.id},/*#__PURE__*/React.createElement("tr",{style:{borderTop:"1px solid var(--border)"}},/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px"}},i+1),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px",whiteSpace:"nowrap"}},s.name),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px"}},/*#__PURE__*/React.createElement("button",{onClick:()=>setExpandedId(expandedId===s.id?null:s.id),style:{display:"flex",alignItems:"center",gap:5,background:"#fff",color:"var(--text-muted)",border:"1px solid var(--border)",borderRadius:8,padding:"6px 10px",fontFamily:"Sarabun, sans-serif",fontSize:12,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}},expandedId===s.id?/*#__PURE__*/React.createElement(ChevronDown,{size:13}):/*#__PURE__*/React.createElement(ChevronRight,{size:13})," ดูข้อมูลส่วนตัว")),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px",maxWidth:220}},s.title),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px",whiteSpace:"nowrap"}},/*#__PURE__*/React.createElement("span",{style:{display:"inline-flex",alignItems:"center",gap:6}},/*#__PURE__*/React.createElement(CatIcon,{main:s.main,size:13})," ",CATS[s.main].label," · ",s.sub)),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px"}},/*#__PURE__*/React.createElement("select",{value:s.award||"",onChange:e=>setSubmissions(submissions.map(x=>x.id===s.id?{...x,award:e.target.value||null}:x)),style:{border:"1px solid var(--border)",borderRadius:8,padding:"7px 8px",fontFamily:"Sarabun, sans-serif",fontSize:12,background:s.award?"#FBF0DE":"#fff",color:s.award?"#7A4B12":"var(--text-muted)",fontWeight:s.award?700:400}},/*#__PURE__*/React.createElement("option",{value:""},"-- ยังไม่ตัดสิน --"),AWARD_RANKS.map(r=>/*#__PURE__*/React.createElement("option",{key:r,value:r},r)))),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px"}},s.hasFiles||s.wordFile||s.pdfFile||s.main==="photo"&&s.fileUrl?/*#__PURE__*/React.createElement("div",{style:{display:"flex",gap:6,flexWrap:"wrap"}},s.main==="photo"&&s.fileUrl&&/*#__PURE__*/React.createElement("a",{href:s.fileUrl,target:"_blank",rel:"noopener noreferrer",style:{display:"flex",alignItems:"center",gap:8,textDecoration:"none"}},/*#__PURE__*/React.createElement("img",{src:s.fileUrl,alt:s.title,style:{width:34,height:34,borderRadius:6,objectFit:"cover",border:"1px solid var(--border)"}}),/*#__PURE__*/React.createElement("span",{style:{display:"flex",alignItems:"center",gap:5,background:"#8E44AD",color:"#fff",borderRadius:8,padding:"7px 10px",fontFamily:"Sarabun, sans-serif",fontSize:12,fontWeight:600}},/*#__PURE__*/React.createElement(Camera,{size:12})," ดูภาพ")),(s.wordFileName||s.wordFile)&&/*#__PURE__*/React.createElement("button",{onClick:()=>downloadSubmissionFile(s,"wordFile",downloadingId,setDownloadingId),disabled:downloadingId===s.id+"-wordFile",style:{display:"flex",alignItems:"center",gap:5,background:"var(--primary)",color:"#fff",border:"none",borderRadius:8,padding:"7px 10px",fontFamily:"Sarabun, sans-serif",fontSize:12,fontWeight:600,cursor:"pointer"}},/*#__PURE__*/React.createElement(Download,{size:12})," ",downloadingId===s.id+"-wordFile"?"...":"Word"),(s.pdfFileName||s.pdfFile)&&/*#__PURE__*/React.createElement("button",{onClick:()=>downloadSubmissionFile(s,"pdfFile",downloadingId,setDownloadingId),disabled:downloadingId===s.id+"-pdfFile",style:{display:"flex",alignItems:"center",gap:5,background:"var(--danger)",color:"#fff",border:"none",borderRadius:8,padding:"7px 10px",fontFamily:"Sarabun, sans-serif",fontSize:12,fontWeight:600,cursor:"pointer"}},/*#__PURE__*/React.createElement(Download,{size:12})," ",downloadingId===s.id+"-pdfFile"?"...":"PDF")):/*#__PURE__*/React.createElement("button",{onClick:()=>s.fileUrl?window.open(s.fileUrl,"_blank"):s.main==="film"?window.open(s.file,"_blank"):alert(`ดาวน์โหลดไฟล์จริง: ${s.file}\n(ผลงานนี้ส่งก่อนเปิดใช้ระบบอัปโหลดไฟล์จริง)`),style:{display:"flex",alignItems:"center",gap:6,background:"var(--primary)",color:"#fff",border:"none",borderRadius:8,padding:"7px 12px",fontFamily:"Sarabun, sans-serif",fontSize:12.5,fontWeight:600,cursor:"pointer"}},/*#__PURE__*/React.createElement(Download,{size:13})," ดาวน์โหลด")),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px"}},/*#__PURE__*/React.createElement("button",{onClick:()=>setCertFor(s),style:{display:"flex",alignItems:"center",gap:6,background:"var(--accent)",color:"#3D2B08",border:"none",borderRadius:8,padding:"7px 12px",fontFamily:"Sarabun, sans-serif",fontSize:12.5,fontWeight:600,cursor:"pointer"}},/*#__PURE__*/React.createElement(Award,{size:13})," ออกเกียรติบัตร")),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px"}},/*#__PURE__*/React.createElement("div",{style:{display:"flex",gap:6}},/*#__PURE__*/React.createElement("button",{onClick:()=>setEditFor(s),title:"แก้ไข",style:{display:"flex",alignItems:"center",justifyContent:"center",background:"#fff",color:"var(--accent-2)",border:"1px solid var(--accent-2)",borderRadius:8,padding:"7px 9px",cursor:"pointer"}},/*#__PURE__*/React.createElement(FileType2,{size:13})),/*#__PURE__*/React.createElement("button",{onClick:()=>deleteSubmission(s),title:"ลบ",style:{display:"flex",alignItems:"center",justifyContent:"center",background:"#fff",color:"var(--danger)",border:"1px solid var(--danger)",borderRadius:8,padding:"7px 9px",cursor:"pointer"}},/*#__PURE__*/React.createElement(Trash2,{size:13}))))),expandedId===s.id&&/*#__PURE__*/React.createElement("tr",{style:{background:"var(--bg)"}},/*#__PURE__*/React.createElement("td",{colSpan:9,style:{padding:"14px 20px"}},/*#__PURE__*/React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(160px, 1fr))",gap:12,fontFamily:"Sarabun, sans-serif",fontSize:13}},/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5}},"ตำแหน่ง"),/*#__PURE__*/React.createElement("div",{style:{fontWeight:600}},s.position||"-")),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5}},"โทรศัพท์"),/*#__PURE__*/React.createElement("div",{style:{fontWeight:600}},s.phone||"-")),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5}},"LINE ID"),/*#__PURE__*/React.createElement("div",{style:{fontWeight:600}},s.line||"-")),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5}},"หน่วยบริการ"),/*#__PURE__*/React.createElement("div",{style:{fontWeight:600}},s.unit||"-")),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5}},"อำเภอ"),/*#__PURE__*/React.createElement("div",{style:{fontWeight:600}},s.amphoe||"-")),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5}},"จังหวัด"),/*#__PURE__*/React.createElement("div",{style:{fontWeight:600}},s.province||"-"))),s.main==="photo"&&s.caption&&/*#__PURE__*/React.createElement("div",{style:{marginTop:12,background:"#fff",border:"1px solid var(--border)",borderRadius:10,padding:"10px 14px"}},/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5,marginBottom:4}},"คำบรรยายใต้ภาพ"),/*#__PURE__*/React.createElement("div",{style:{fontStyle:"italic"}},"\"",s.caption,"\"")),/*#__PURE__*/React.createElement("button",{onClick:()=>setEditFor(s),style:{marginTop:12,display:"flex",alignItems:"center",gap:6,background:"#fff",color:"var(--accent-2)",border:"1px solid var(--accent-2)",borderRadius:8,padding:"7px 12px",fontFamily:"Sarabun, sans-serif",fontSize:12,fontWeight:600,cursor:"pointer"}},/*#__PURE__*/React.createElement(FileType2,{size:13})," แก้ไขข้อมูลนี้"))))),list.length===0&&/*#__PURE__*/React.createElement("tr",null,/*#__PURE__*/React.createElement("td",{colSpan:9,style:{padding:20,textAlign:"center",color:"var(--text-muted)"}},"ไม่พบผลงานที่ตรงกับเงื่อนไข")))))),certFor&&/*#__PURE__*/React.createElement(CertificateModal,{submission:certFor,onClose:()=>setCertFor(null)}),editFor&&/*#__PURE__*/React.createElement(EditSubmissionModal,{submission:editFor,submissions:submissions,setSubmissions:setSubmissions,onClose:()=>setEditFor(null)}),/*#__PURE__*/React.createElement(AwardResultsReport,{submissions:submissions}));}/* ----------------------------------------------------------------------
+    <body>${htmlBody}</body></html>`;const blob=new Blob(["\ufeff",fullHtml],{type:"application/msword"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=filename+".doc";a.click();URL.revokeObjectURL(url);}function ReportsPage({submissions,setSubmissions}){const[filterType,setFilterType]=useState("all");const[filterAmphoe,setFilterAmphoe]=useState("all");const[search,setSearch]=useState("");const[certFor,setCertFor]=useState(null);const[editFor,setEditFor]=useState(null);const[expandedId,setExpandedId]=useState(null);const[downloadingId,setDownloadingId]=useState(null);const[zipExporting,setZipExporting]=useState(false);const[zipProgress,setZipProgress]=useState({done:0,total:0});const amphoeOptions=React.useMemo(()=>Array.from(new Set(submissions.map(s=>s.amphoe).filter(Boolean))).sort(),[submissions]);const list=submissions.filter(s=>filterType==="all"||s.main===filterType).filter(s=>filterAmphoe==="all"||s.amphoe===filterAmphoe).filter(s=>!search.trim()||(s.name+s.unit+s.title).toLowerCase().includes(search.trim().toLowerCase()));
+  const exportAllAsZip = async () => {
+    if (!window.confirm(`เตรียมส่งออกไฟล์ผลงานทั้งหมด ${submissions.length} รายการเป็น ZIP\n\nขั้นตอนนี้อาจใช้เวลาสักครู่ (ต้องดาวน์โหลดไฟล์ทุกคนมารวมกัน) กด OK เพื่อเริ่ม`)) return;
+    setZipExporting(true);
+    setZipProgress({ done: 0, total: submissions.length });
+    try {
+      const zip = new SimpleZipWriter();
+      const byCategory = {};
+      Object.values(CATS).forEach((c) => { byCategory[c.key] = []; });
+      submissions.forEach((s) => { if (byCategory[s.main]) byCategory[s.main].push(s); });
+
+      let doneCount = 0;
+      for (const cat of Object.values(CATS)) {
+        const list = byCategory[cat.key];
+        const catFolder = sanitizeFileName(cat.label);
+        for (let i = 0; i < list.length; i++) {
+          const s = list[i];
+          const personFolder = `${catFolder}/${String(i + 1).padStart(2, "0")}_${sanitizeFileName(s.name)}`;
+          try {
+            if (s.main === "film") {
+              const txt = `ชื่อผลงาน: ${s.title}\nผู้ส่ง: ${s.name}\nหน่วยบริการ: ${s.unit}\nลิงก์ YouTube: ${s.file}\n`;
+              zip.addFile(`${personFolder}/ลิงก์วิดีโอ.txt`, new TextEncoder().encode(txt));
+            } else if (s.main === "photo") {
+              const photoSrc = s.photoUrl || s.fileUrl;
+              if (photoSrc) {
+                const bytes = await sourceToBytes(photoSrc);
+                if (bytes) zip.addFile(`${personFolder}/${sanitizeFileName(s.title)}.jpg`, bytes);
+              }
+              const wordSrc = s.wordFileUrl || (s.wordFile && s.wordFile.dataUrl);
+              if (wordSrc) {
+                const bytes = await sourceToBytes(wordSrc);
+                if (bytes) zip.addFile(`${personFolder}/${s.wordFileName || (s.wordFile && s.wordFile.name) || "คำบรรยาย.docx"}`, bytes);
+              }
+            } else {
+              const wordSrc = s.wordFileUrl || (s.wordFile && s.wordFile.dataUrl);
+              if (wordSrc) {
+                const bytes = await sourceToBytes(wordSrc);
+                if (bytes) zip.addFile(`${personFolder}/${s.wordFileName || (s.wordFile && s.wordFile.name) || "ผลงาน.docx"}`, bytes);
+              }
+              const pdfSrc = s.pdfFileUrl || (s.pdfFile && s.pdfFile.dataUrl);
+              if (pdfSrc) {
+                const bytes = await sourceToBytes(pdfSrc);
+                if (bytes) zip.addFile(`${personFolder}/${s.pdfFileName || (s.pdfFile && s.pdfFile.name) || "ผลงาน.pdf"}`, bytes);
+              }
+              if (!wordSrc && !pdfSrc && s.fileUrl) {
+                const bytes = await sourceToBytes(s.fileUrl);
+                if (bytes) zip.addFile(`${personFolder}/${sanitizeFileName(s.file || s.title)}`, bytes);
+              }
+            }
+          } catch (fileErr) {
+            zip.addFile(`${personFolder}/ข้อผิดพลาด.txt`, new TextEncoder().encode(`ไม่สามารถดาวน์โหลดไฟล์ของรายการนี้ได้: ${fileErr.message}`));
+          }
+          doneCount++;
+          setZipProgress({ done: doneCount, total: submissions.length });
+        }
+      }
+
+      const bytes = zip.generate();
+      const blob = new Blob([bytes], { type: "application/zip" });
+      triggerBlobDownload(blob, `ผลงานทั้งหมด-สมาคมหมออนามัยสกลนคร-2569.zip`);
+    } catch (err) {
+      alert("ส่งออกไฟล์ ZIP ไม่สำเร็จ: " + err.message);
+    }
+    setZipExporting(false);
+  };
+
+  const exportPersonalInfoExcel = () => {
+    let html = `<h2>รายชื่อผู้ส่งผลงานวิชาการ แยกตามประเภท</h2><p>การประชุมวิชาการสมาคมหมออนามัยสกลนคร ประจำปี 2569</p>`;
+    Object.values(CATS).forEach((cat) => {
+      const list = submissions.filter((s) => s.main === cat.key);
+      if (list.length === 0) return;
+      html += `<h3>${cat.label} (${list.length} รายการ)</h3>`;
+      html += `<table><tr><th>ลำดับ</th><th>ชื่อ-สกุล</th><th>ตำแหน่ง</th><th>โทรศัพท์</th><th>LINE ID</th><th>หน่วยบริการ</th><th>อำเภอ</th><th>จังหวัด</th><th>ชื่อเรื่อง</th></tr>`;
+      list.forEach((s, i) => {
+        html += `<tr><td>${i + 1}</td><td>${s.name || ""}</td><td>${s.position || ""}</td><td>${s.phone || ""}</td><td>${s.line || ""}</td><td>${s.unit || ""}</td><td>${s.amphoe || ""}</td><td>${s.province || ""}</td><td>${s.title || ""}</td></tr>`;
+      });
+      html += `</table>`;
+    });
+    const fullHtml = `<html><head><meta charset="utf-8"><style>
+      table { border-collapse: collapse; margin-bottom: 20px; }
+      td, th { border: 1px solid #999; padding: 5px 10px; font-family: 'TH Sarabun New', sans-serif; font-size: 14pt; }
+      th { background: #E4F4EC; font-weight: bold; }
+      h2, h3 { font-family: 'TH Sarabun New', sans-serif; }
+    </style></head><body>${html}</body></html>`;
+    const blob = new Blob(["\ufeff", fullHtml], { type: "application/vnd.ms-excel" });
+    triggerBlobDownload(blob, "รายชื่อผู้ส่งผลงาน-แยกประเภท-2569.xls");
+  };
+
+const deleteSubmission=s=>{if(!window.confirm(`ลบผลงาน "${s.title}" ของ ${s.name} ออกจากระบบถาวร?`))return;if(s.fileDeleteUrl)window.open(s.fileDeleteUrl,"_blank");// ลบไฟล์แนบ (Word/PDF) ที่เก็บแยกไว้ด้วย ป้องกันข้อมูลไฟล์ค้างเปล่าประโยชน์ในระบบ (กินพื้นที่โดยไม่จำเป็น)
+if(s.hasFiles){fetch(FIREBASE_DB_URL+"/submission_files/"+s.id+".json",{method:"DELETE"}).catch(()=>{});}setSubmissions(submissions.filter(x=>x.id!==s.id));};return/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement(SectionTitle,{hideBrand:true,eyebrow:"สำหรับคณะกรรมการ",title:"รายงานและดาวน์โหลดผลงานจริง",desc:"รวมรายชื่อผู้ส่งผลงานทุกประเภทพร้อมข้อมูลส่วนตัวไว้ในที่เดียว กรองตามประเภทหรืออำเภอ พร้อมดาวน์โหลดไฟล์จริง ออกเกียรติบัตร แก้ไข หรือลบได้ในหน้าเดียว"}),/*#__PURE__*/React.createElement("div", {
+  style: {
+    display: "flex",
+    gap: 10,
+    marginBottom: 18,
+    flexWrap: "wrap",
+    alignItems: "center"
+  }
+}, /*#__PURE__*/React.createElement("button", {
+  onClick: exportAllAsZip,
+  disabled: zipExporting,
+  style: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    background: zipExporting ? "#B9C4C0" : "var(--primary)",
+    color: "#fff",
+    border: "none",
+    borderRadius: 10,
+    padding: "10px 16px",
+    fontFamily: "Kanit, sans-serif",
+    fontWeight: 600,
+    fontSize: 13.5,
+    cursor: zipExporting ? "not-allowed" : "pointer"
+  }
+}, /*#__PURE__*/React.createElement(Download, {
+  size: 15
+}), zipExporting ? `กำลังส่งออก... (${zipProgress.done}/${zipProgress.total})` : "📦 ส่งออกไฟล์ทั้งหมด (ZIP)"), /*#__PURE__*/React.createElement("button", {
+  onClick: exportPersonalInfoExcel,
+  style: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    background: "#1D6F42",
+    color: "#fff",
+    border: "none",
+    borderRadius: 10,
+    padding: "10px 16px",
+    fontFamily: "Kanit, sans-serif",
+    fontWeight: 600,
+    fontSize: 13.5,
+    cursor: "pointer"
+  }
+}, /*#__PURE__*/React.createElement(FileText, {
+  size: 15
+}), "📊 ส่งออกรายชื่อผู้ส่ง (Excel)")),/*#__PURE__*/React.createElement("div",{style:{display:"flex",gap:10,marginBottom:18,flexWrap:"wrap",alignItems:"center"}},/*#__PURE__*/React.createElement("select",{value:filterType,onChange:e=>setFilterType(e.target.value),style:{...selStyle,width:"auto",marginTop:0}},/*#__PURE__*/React.createElement("option",{value:"all"},"ทุกประเภท (",submissions.length,")"),Object.values(CATS).map(c=>/*#__PURE__*/React.createElement("option",{key:c.key,value:c.key},c.label," (",submissions.filter(s=>s.main===c.key).length,")"))),/*#__PURE__*/React.createElement("select",{value:filterAmphoe,onChange:e=>setFilterAmphoe(e.target.value),style:{...selStyle,width:"auto",marginTop:0}},/*#__PURE__*/React.createElement("option",{value:"all"},"ทุกอำเภอ"),amphoeOptions.map(a=>/*#__PURE__*/React.createElement("option",{key:a,value:a},a," (",submissions.filter(s=>s.amphoe===a).length,")"))),/*#__PURE__*/React.createElement("input",{value:search,onChange:e=>setSearch(e.target.value),placeholder:"ค้นหาชื่อผู้ส่ง / หน่วยบริการ / ชื่อผลงาน",style:{...selStyle,width:"100%",maxWidth:280,marginTop:0}})),/*#__PURE__*/React.createElement("div",{style:{background:"#fff",border:"1px solid var(--border)",borderRadius:16,overflow:"hidden"}},/*#__PURE__*/React.createElement("div",{style:{overflowX:"auto"}},/*#__PURE__*/React.createElement("table",{style:{width:"100%",borderCollapse:"collapse",fontFamily:"Sarabun, sans-serif",fontSize:13.5}},/*#__PURE__*/React.createElement("thead",null,/*#__PURE__*/React.createElement("tr",{style:{background:"var(--bg)",textAlign:"left"}},["ลำดับ","ผู้ส่งผลงาน","ข้อมูลส่วนตัว","ชื่อผลงาน","ประเภท","รางวัล","ไฟล์ผลงานจริง","เกียรติบัตร","จัดการ"].map(h=>/*#__PURE__*/React.createElement("th",{key:h,style:{padding:"10px 16px",fontWeight:600,color:"var(--text-muted)",whiteSpace:"nowrap"}},h)))),/*#__PURE__*/React.createElement("tbody",null,list.map((s,i)=>/*#__PURE__*/React.createElement(React.Fragment,{key:s.id},/*#__PURE__*/React.createElement("tr",{style:{borderTop:"1px solid var(--border)"}},/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px"}},i+1),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px",whiteSpace:"nowrap"}},s.name),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px"}},/*#__PURE__*/React.createElement("button",{onClick:()=>setExpandedId(expandedId===s.id?null:s.id),style:{display:"flex",alignItems:"center",gap:5,background:"#fff",color:"var(--text-muted)",border:"1px solid var(--border)",borderRadius:8,padding:"6px 10px",fontFamily:"Sarabun, sans-serif",fontSize:12,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}},expandedId===s.id?/*#__PURE__*/React.createElement(ChevronDown,{size:13}):/*#__PURE__*/React.createElement(ChevronRight,{size:13})," ดูข้อมูลส่วนตัว")),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px",maxWidth:220}},s.title),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px",whiteSpace:"nowrap"}},/*#__PURE__*/React.createElement("span",{style:{display:"inline-flex",alignItems:"center",gap:6}},/*#__PURE__*/React.createElement(CatIcon,{main:s.main,size:13})," ",CATS[s.main].label," · ",s.sub)),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px"}},/*#__PURE__*/React.createElement("select",{value:s.award||"",onChange:e=>setSubmissions(submissions.map(x=>x.id===s.id?{...x,award:e.target.value||null}:x)),style:{border:"1px solid var(--border)",borderRadius:8,padding:"7px 8px",fontFamily:"Sarabun, sans-serif",fontSize:12,background:s.award?"#FBF0DE":"#fff",color:s.award?"#7A4B12":"var(--text-muted)",fontWeight:s.award?700:400}},/*#__PURE__*/React.createElement("option",{value:""},"-- ยังไม่ตัดสิน --"),AWARD_RANKS.map(r=>/*#__PURE__*/React.createElement("option",{key:r,value:r},r)))),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px"}},s.hasFiles||s.wordFile||s.pdfFile||s.main==="photo"&&s.fileUrl?/*#__PURE__*/React.createElement("div",{style:{display:"flex",gap:6,flexWrap:"wrap"}},s.main==="photo"&&s.fileUrl&&/*#__PURE__*/React.createElement("a",{href:s.fileUrl,target:"_blank",rel:"noopener noreferrer",style:{display:"flex",alignItems:"center",gap:8,textDecoration:"none"}},/*#__PURE__*/React.createElement("img",{src:s.fileUrl,alt:s.title,style:{width:34,height:34,borderRadius:6,objectFit:"cover",border:"1px solid var(--border)"}}),/*#__PURE__*/React.createElement("span",{style:{display:"flex",alignItems:"center",gap:5,background:"#8E44AD",color:"#fff",borderRadius:8,padding:"7px 10px",fontFamily:"Sarabun, sans-serif",fontSize:12,fontWeight:600}},/*#__PURE__*/React.createElement(Camera,{size:12})," ดูภาพ")),(s.wordFileName||s.wordFile)&&/*#__PURE__*/React.createElement("button",{onClick:()=>downloadSubmissionFile(s,"wordFile",downloadingId,setDownloadingId),disabled:downloadingId===s.id+"-wordFile",style:{display:"flex",alignItems:"center",gap:5,background:"var(--primary)",color:"#fff",border:"none",borderRadius:8,padding:"7px 10px",fontFamily:"Sarabun, sans-serif",fontSize:12,fontWeight:600,cursor:"pointer"}},/*#__PURE__*/React.createElement(Download,{size:12})," ",downloadingId===s.id+"-wordFile"?"...":"Word"),(s.pdfFileName||s.pdfFile)&&/*#__PURE__*/React.createElement("button",{onClick:()=>downloadSubmissionFile(s,"pdfFile",downloadingId,setDownloadingId),disabled:downloadingId===s.id+"-pdfFile",style:{display:"flex",alignItems:"center",gap:5,background:"var(--danger)",color:"#fff",border:"none",borderRadius:8,padding:"7px 10px",fontFamily:"Sarabun, sans-serif",fontSize:12,fontWeight:600,cursor:"pointer"}},/*#__PURE__*/React.createElement(Download,{size:12})," ",downloadingId===s.id+"-pdfFile"?"...":"PDF")):/*#__PURE__*/React.createElement("button",{onClick:()=>s.fileUrl?window.open(s.fileUrl,"_blank"):s.main==="film"?window.open(s.file,"_blank"):alert(`ดาวน์โหลดไฟล์จริง: ${s.file}\n(ผลงานนี้ส่งก่อนเปิดใช้ระบบอัปโหลดไฟล์จริง)`),style:{display:"flex",alignItems:"center",gap:6,background:"var(--primary)",color:"#fff",border:"none",borderRadius:8,padding:"7px 12px",fontFamily:"Sarabun, sans-serif",fontSize:12.5,fontWeight:600,cursor:"pointer"}},/*#__PURE__*/React.createElement(Download,{size:13})," ดาวน์โหลด")),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px"}},/*#__PURE__*/React.createElement("button",{onClick:()=>setCertFor(s),style:{display:"flex",alignItems:"center",gap:6,background:"var(--accent)",color:"#3D2B08",border:"none",borderRadius:8,padding:"7px 12px",fontFamily:"Sarabun, sans-serif",fontSize:12.5,fontWeight:600,cursor:"pointer"}},/*#__PURE__*/React.createElement(Award,{size:13})," ออกเกียรติบัตร")),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px"}},/*#__PURE__*/React.createElement("div",{style:{display:"flex",gap:6}},/*#__PURE__*/React.createElement("button",{onClick:()=>setEditFor(s),title:"แก้ไข",style:{display:"flex",alignItems:"center",justifyContent:"center",background:"#fff",color:"var(--accent-2)",border:"1px solid var(--accent-2)",borderRadius:8,padding:"7px 9px",cursor:"pointer"}},/*#__PURE__*/React.createElement(FileType2,{size:13})),/*#__PURE__*/React.createElement("button",{onClick:()=>deleteSubmission(s),title:"ลบ",style:{display:"flex",alignItems:"center",justifyContent:"center",background:"#fff",color:"var(--danger)",border:"1px solid var(--danger)",borderRadius:8,padding:"7px 9px",cursor:"pointer"}},/*#__PURE__*/React.createElement(Trash2,{size:13}))))),expandedId===s.id&&/*#__PURE__*/React.createElement("tr",{style:{background:"var(--bg)"}},/*#__PURE__*/React.createElement("td",{colSpan:9,style:{padding:"14px 20px"}},/*#__PURE__*/React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(160px, 1fr))",gap:12,fontFamily:"Sarabun, sans-serif",fontSize:13}},/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5}},"ตำแหน่ง"),/*#__PURE__*/React.createElement("div",{style:{fontWeight:600}},s.position||"-")),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5}},"โทรศัพท์"),/*#__PURE__*/React.createElement("div",{style:{fontWeight:600}},s.phone||"-")),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5}},"LINE ID"),/*#__PURE__*/React.createElement("div",{style:{fontWeight:600}},s.line||"-")),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5}},"หน่วยบริการ"),/*#__PURE__*/React.createElement("div",{style:{fontWeight:600}},s.unit||"-")),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5}},"อำเภอ"),/*#__PURE__*/React.createElement("div",{style:{fontWeight:600}},s.amphoe||"-")),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5}},"จังหวัด"),/*#__PURE__*/React.createElement("div",{style:{fontWeight:600}},s.province||"-"))),s.main==="photo"&&s.caption&&/*#__PURE__*/React.createElement("div",{style:{marginTop:12,background:"#fff",border:"1px solid var(--border)",borderRadius:10,padding:"10px 14px"}},/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5,marginBottom:4}},"คำบรรยายใต้ภาพ"),/*#__PURE__*/React.createElement("div",{style:{fontStyle:"italic"}},"\"",s.caption,"\"")),/*#__PURE__*/React.createElement("button",{onClick:()=>setEditFor(s),style:{marginTop:12,display:"flex",alignItems:"center",gap:6,background:"#fff",color:"var(--accent-2)",border:"1px solid var(--accent-2)",borderRadius:8,padding:"7px 12px",fontFamily:"Sarabun, sans-serif",fontSize:12,fontWeight:600,cursor:"pointer"}},/*#__PURE__*/React.createElement(FileType2,{size:13})," แก้ไขข้อมูลนี้"))))),list.length===0&&/*#__PURE__*/React.createElement("tr",null,/*#__PURE__*/React.createElement("td",{colSpan:9,style:{padding:20,textAlign:"center",color:"var(--text-muted)"}},"ไม่พบผลงานที่ตรงกับเงื่อนไข")))))),certFor&&/*#__PURE__*/React.createElement(CertificateModal,{submission:certFor,onClose:()=>setCertFor(null)}),editFor&&/*#__PURE__*/React.createElement(EditSubmissionModal,{submission:editFor,submissions:submissions,setSubmissions:setSubmissions,onClose:()=>setEditFor(null)}),/*#__PURE__*/React.createElement(AwardResultsReport,{submissions:submissions}));}/* ----------------------------------------------------------------------
    4a. รายงานผลการตัดสินรางวัล (ตามประเภทผลงาน)
 ---------------------------------------------------------------------- */function AwardResultsReport({submissions}){const awarded=submissions.filter(s=>s.award);if(awarded.length===0)return null;const groups=Object.values(CATS).map(c=>({cat:c,items:AWARD_RANKS.map(rank=>({rank,subs:awarded.filter(s=>s.main===c.key&&s.award===rank)})).filter(g=>g.subs.length>0)})).filter(g=>g.items.length>0);const buildHtml=()=>{let html=`<h1>ผลการตัดสินผลงานวิชาการ<br/>การประชุมวิชาการสมาคมหมออนามัยสกลนคร ประจำปี 2569</h1>`;groups.forEach(g=>{html+=`<h2>${g.cat.label}</h2><table><tr><th>รางวัล</th><th>ชื่อ-สกุล</th><th>ชื่อผลงาน</th><th>หน่วยบริการ</th></tr>`;g.items.forEach(it=>{it.subs.forEach((s,idx)=>{html+=`<tr>${idx===0?`<td rowspan="${it.subs.length}">${it.rank}</td>`:""}<td>${s.name}</td><td>${s.title}</td><td>${s.unit}</td></tr>`;});});html+=`</table>`;});return html;};return/*#__PURE__*/React.createElement("div",{className:"award-report-print-area",style:{background:"#fff",border:"1px solid var(--border)",borderRadius:16,padding:22,marginTop:26}},/*#__PURE__*/React.createElement("style",null,`
         @media print {
