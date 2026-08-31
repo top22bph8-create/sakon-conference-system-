@@ -917,7 +917,17 @@ async function sourceToBytes(source) {
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
     return bytes;
   }
-  const res = await fetch(source);
+  let res;
+  try {
+    res = await fetch(source);
+  } catch (netErr) {
+    // ⚠️ เมื่อ fetch() ล้มเหลวแบบ "Failed to fetch" (ไม่ใช่ error จาก server) มักเกิดจากปัญหา CORS
+    // (เซิร์ฟเวอร์ไฟล์ เช่น Firebase Storage ไม่อนุญาตให้เว็บนี้อ่านไฟล์ข้ามโดเมน) ไม่ใช่ไฟล์หายจริง
+    throw new Error(`เชื่อมต่อไฟล์ไม่ได้ (อาจเกิดจากปัญหา CORS ที่ต้นทางไฟล์ไม่อนุญาตให้เว็บนี้อ่านข้ามโดเมน): ${netErr.message}`);
+  }
+  if (!res.ok) {
+    throw new Error(`เซิร์ฟเวอร์ไฟล์ตอบกลับผิดพลาด (รหัส ${res.status})`);
+  }
   const buf = await res.arrayBuffer();
   return new Uint8Array(buf);
 }
@@ -933,6 +943,22 @@ function triggerBlobDownload(blob, filename) {
   a.download = filename;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+// สร้างไฟล์ Word (.doc) เป็นข้อมูลไบต์ดิบ (ไม่ดาวน์โหลดทันที) สำหรับฝังลงใน ZIP โดยตรง
+function buildWordDocBytes(title, htmlBody) {
+  const fullHtml = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+    <head><meta charset="utf-8"><title>${title}</title>
+    <style>
+      body { font-family: 'TH SarabunIT๙', 'TH Sarabun New', Sarabun, sans-serif; font-size: 16pt; }
+      h1 { font-size: 20pt; text-align: center; }
+      h2 { font-size: 17pt; margin-top: 20pt; }
+      table { border-collapse: collapse; width: 100%; margin-bottom: 12pt; }
+      td, th { border: 1px solid #999; padding: 6pt 10pt; font-size: 14pt; }
+      th { background: #E4F4EC; }
+    </style></head>
+    <body>${htmlBody}</body></html>`;
+  return new TextEncoder().encode("\ufeff" + fullHtml);
 }
 
 function exportReportToWord(title,htmlBody,filename){const fullHtml=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
@@ -956,30 +982,49 @@ function exportReportToWord(title,htmlBody,filename){const fullHtml=`<html xmlns
       Object.values(CATS).forEach((c) => { byCategory[c.key] = []; });
       submissions.forEach((s) => { if (byCategory[s.main]) byCategory[s.main].push(s); });
 
-      // ⚠️ แก้บั๊ก: เดิมไม่ได้เรียงลำดับก่อนตั้งเลขโฟลเดอร์ ทำให้เลขลำดับสุ่มไม่ตรงกับลำดับการส่งจริง
-      // เรียงตามวันเวลาที่ส่งผลงานจริง (submittedAt) จากคนแรกสุดไปคนหลังสุด ก่อนตั้งชื่อโฟลเดอร์
+      // เรียงตามวันเวลาที่ส่งผลงานจริง (submittedAt) จากคนแรกสุดไปคนหลังสุด ก่อนตั้งชื่อโฟลเดอร์/ลำดับ
       Object.keys(byCategory).forEach((key) => {
         byCategory[key].sort((a, b) => (a.submittedAt || 0) - (b.submittedAt || 0));
       });
 
       const manifestLines = [`รายงานการส่งออกไฟล์ผลงาน — สมาคมหมออนามัยสกลนคร ประจำปี 2569`, `สร้างเมื่อ: ${new Date().toLocaleString("th-TH")}`, ``];
-
       let doneCount = 0;
+
       for (const cat of Object.values(CATS)) {
         const list = byCategory[cat.key];
         const catFolder = sanitizeFileName(cat.label);
         manifestLines.push(`=== ${cat.label} (${list.length} รายการ) ===`);
+
+        if (cat.key === "film") {
+          // ⚠️ ประเภทหนังสั้น: ไม่มีไฟล์จริงให้ดาวน์โหลด (ผู้ส่งแนบแค่ลิงก์ YouTube) — ตามที่ขอ
+          // ให้รวมทุกคนไว้ในไฟล์ Word เดียว เรียงลำดับ 1 ถึงคนสุดท้าย พร้อมข้อมูลผู้ส่งและลิงก์ผลงานจริง
+          let html = `<h1>รายชื่อผลงานหนังสั้น "ชีวิตหมออนามัย"</h1><p style="text-align:center">การประชุมวิชาการสมาคมหมออนามัยสกลนคร ประจำปี 2569</p>`;
+          list.forEach((s, i) => {
+            html += `<p><b>${i + 1}. ชื่อผลงาน:</b> ${s.title || "-"}<br/>` +
+              `<b>ชื่อ-สกุล:</b> ${s.name || "-"}<br/>` +
+              `<b>หน่วยบริการ:</b> ${s.unit || "-"}<br/>` +
+              `<b>หมายเลขโทรศัพท์:</b> ${s.phone || "-"}<br/>` +
+              `<b>ลิงก์ผลงาน:</b> ${s.file || "-"}</p><hr/>`;
+            const submittedLabel = s.submittedAt ? new Date(s.submittedAt).toLocaleString("th-TH") : "ไม่ทราบวันเวลา (ข้อมูลเก่า)";
+            manifestLines.push(`  ${i + 1}. ${s.name} — ${s.title} | ส่งเมื่อ: ${submittedLabel} | ลิงก์: ${s.file || "ไม่มี"}`);
+            doneCount++;
+            setZipProgress({ done: doneCount, total: submissions.length });
+          });
+          if (list.length > 0) {
+            const wordBytes = buildWordDocBytes("รายชื่อผลงานหนังสั้น", html);
+            zip.addFile(`${catFolder}/รายชื่อผลงานหนังสั้น-ชีวิตหมออนามัย.doc`, wordBytes);
+          }
+          manifestLines.push("");
+          continue;
+        }
+
         for (let i = 0; i < list.length; i++) {
           const s = list[i];
           const personFolder = `${catFolder}/${String(i + 1).padStart(2, "0")}_${sanitizeFileName(s.name)}`;
           const submittedLabel = s.submittedAt ? new Date(s.submittedAt).toLocaleString("th-TH") : "ไม่ทราบวันเวลา (ข้อมูลเก่า)";
           const filesAdded = [];
           try {
-            if (s.main === "film") {
-              const txt = `ชื่อผลงาน: ${s.title}\nผู้ส่ง: ${s.name}\nหน่วยบริการ: ${s.unit}\nลิงก์ YouTube: ${s.file}\n`;
-              zip.addFile(`${personFolder}/ลิงก์วิดีโอ.txt`, new TextEncoder().encode(txt));
-              filesAdded.push("ลิงก์วิดีโอ.txt");
-            } else if (s.main === "photo") {
+            if (cat.key === "photo") {
               const photoSrc = s.photoUrl || s.fileUrl;
               if (photoSrc) {
                 const bytes = await sourceToBytes(photoSrc);
@@ -992,6 +1037,7 @@ function exportReportToWord(title,htmlBody,filename){const fullHtml=`<html xmlns
                 if (bytes) { zip.addFile(`${personFolder}/${fname}`, bytes); filesAdded.push(fname); }
               }
             } else {
+              // Oral Presentation และ Poster: ไฟล์ Word + PDF ฉบับจริงที่ผู้ส่งแนบมา
               const wordSrc = s.wordFileUrl || (s.wordFile && s.wordFile.dataUrl);
               if (wordSrc) {
                 const bytes = await sourceToBytes(wordSrc);
