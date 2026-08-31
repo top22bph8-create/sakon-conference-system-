@@ -956,51 +956,75 @@ function exportReportToWord(title,htmlBody,filename){const fullHtml=`<html xmlns
       Object.values(CATS).forEach((c) => { byCategory[c.key] = []; });
       submissions.forEach((s) => { if (byCategory[s.main]) byCategory[s.main].push(s); });
 
+      // ⚠️ แก้บั๊ก: เดิมไม่ได้เรียงลำดับก่อนตั้งเลขโฟลเดอร์ ทำให้เลขลำดับสุ่มไม่ตรงกับลำดับการส่งจริง
+      // เรียงตามวันเวลาที่ส่งผลงานจริง (submittedAt) จากคนแรกสุดไปคนหลังสุด ก่อนตั้งชื่อโฟลเดอร์
+      Object.keys(byCategory).forEach((key) => {
+        byCategory[key].sort((a, b) => (a.submittedAt || 0) - (b.submittedAt || 0));
+      });
+
+      const manifestLines = [`รายงานการส่งออกไฟล์ผลงาน — สมาคมหมออนามัยสกลนคร ประจำปี 2569`, `สร้างเมื่อ: ${new Date().toLocaleString("th-TH")}`, ``];
+
       let doneCount = 0;
       for (const cat of Object.values(CATS)) {
         const list = byCategory[cat.key];
         const catFolder = sanitizeFileName(cat.label);
+        manifestLines.push(`=== ${cat.label} (${list.length} รายการ) ===`);
         for (let i = 0; i < list.length; i++) {
           const s = list[i];
           const personFolder = `${catFolder}/${String(i + 1).padStart(2, "0")}_${sanitizeFileName(s.name)}`;
+          const submittedLabel = s.submittedAt ? new Date(s.submittedAt).toLocaleString("th-TH") : "ไม่ทราบวันเวลา (ข้อมูลเก่า)";
+          const filesAdded = [];
           try {
             if (s.main === "film") {
               const txt = `ชื่อผลงาน: ${s.title}\nผู้ส่ง: ${s.name}\nหน่วยบริการ: ${s.unit}\nลิงก์ YouTube: ${s.file}\n`;
               zip.addFile(`${personFolder}/ลิงก์วิดีโอ.txt`, new TextEncoder().encode(txt));
+              filesAdded.push("ลิงก์วิดีโอ.txt");
             } else if (s.main === "photo") {
               const photoSrc = s.photoUrl || s.fileUrl;
               if (photoSrc) {
                 const bytes = await sourceToBytes(photoSrc);
-                if (bytes) zip.addFile(`${personFolder}/${sanitizeFileName(s.title)}.jpg`, bytes);
+                if (bytes) { zip.addFile(`${personFolder}/${sanitizeFileName(s.title)}.jpg`, bytes); filesAdded.push(sanitizeFileName(s.title) + ".jpg"); }
               }
               const wordSrc = s.wordFileUrl || (s.wordFile && s.wordFile.dataUrl);
               if (wordSrc) {
                 const bytes = await sourceToBytes(wordSrc);
-                if (bytes) zip.addFile(`${personFolder}/${s.wordFileName || (s.wordFile && s.wordFile.name) || "คำบรรยาย.docx"}`, bytes);
+                const fname = s.wordFileName || (s.wordFile && s.wordFile.name) || "คำบรรยาย.docx";
+                if (bytes) { zip.addFile(`${personFolder}/${fname}`, bytes); filesAdded.push(fname); }
               }
             } else {
               const wordSrc = s.wordFileUrl || (s.wordFile && s.wordFile.dataUrl);
               if (wordSrc) {
                 const bytes = await sourceToBytes(wordSrc);
-                if (bytes) zip.addFile(`${personFolder}/${s.wordFileName || (s.wordFile && s.wordFile.name) || "ผลงาน.docx"}`, bytes);
+                const fname = s.wordFileName || (s.wordFile && s.wordFile.name) || "ผลงาน.docx";
+                if (bytes) { zip.addFile(`${personFolder}/${fname}`, bytes); filesAdded.push(fname); }
               }
               const pdfSrc = s.pdfFileUrl || (s.pdfFile && s.pdfFile.dataUrl);
               if (pdfSrc) {
                 const bytes = await sourceToBytes(pdfSrc);
-                if (bytes) zip.addFile(`${personFolder}/${s.pdfFileName || (s.pdfFile && s.pdfFile.name) || "ผลงาน.pdf"}`, bytes);
+                const fname = s.pdfFileName || (s.pdfFile && s.pdfFile.name) || "ผลงาน.pdf";
+                if (bytes) { zip.addFile(`${personFolder}/${fname}`, bytes); filesAdded.push(fname); }
               }
               if (!wordSrc && !pdfSrc && s.fileUrl) {
                 const bytes = await sourceToBytes(s.fileUrl);
-                if (bytes) zip.addFile(`${personFolder}/${sanitizeFileName(s.file || s.title)}`, bytes);
+                const fname = sanitizeFileName(s.file || s.title);
+                if (bytes) { zip.addFile(`${personFolder}/${fname}`, bytes); filesAdded.push(fname); }
               }
+            }
+            if (filesAdded.length === 0) {
+              zip.addFile(`${personFolder}/ไม่พบไฟล์แนบ.txt`, new TextEncoder().encode(`รายการนี้ไม่มีไฟล์แนบในระบบ (อาจเป็นผลงานที่ส่งก่อนเปิดใช้ระบบอัปโหลดไฟล์จริง หรือไฟล์สูญหาย)`));
             }
           } catch (fileErr) {
             zip.addFile(`${personFolder}/ข้อผิดพลาด.txt`, new TextEncoder().encode(`ไม่สามารถดาวน์โหลดไฟล์ของรายการนี้ได้: ${fileErr.message}`));
+            filesAdded.push("(ล้มเหลว: " + fileErr.message + ")");
           }
+          manifestLines.push(`  ${i + 1}. ${s.name} — ${s.title} | ส่งเมื่อ: ${submittedLabel} | ไฟล์: ${filesAdded.join(", ") || "ไม่มี"}`);
           doneCount++;
           setZipProgress({ done: doneCount, total: submissions.length });
         }
+        manifestLines.push("");
       }
+
+      zip.addFile("รายงานสรุปการส่งออก.txt", new TextEncoder().encode(manifestLines.join("\n")));
 
       const bytes = zip.generate();
       const blob = new Blob([bytes], { type: "application/zip" });
