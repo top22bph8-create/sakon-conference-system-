@@ -499,9 +499,151 @@ function ScheduleModal({
     }
   }, SCHEDULE_NOTE)));
 }
+const POSTER_RESULTS_DATA = [{
+  name: "นางสาวอาภัสรา พันขาม",
+  title: "การพัฒนาระบบบริการตรวจคัดกรองมะเร็งปากมดลูกเชิงรุกด้วยวิธี \"HPV Self Sampling\""
+}, {
+  name: "นางสาวอาริษา ศรีราช",
+  title: "ประสิทธิผลของการใช้ยาพอกสมุนไพรเพื่อบรรเทาอาการปวดเข่าในผู้สูงอายุที่เป็นโรคข้อเข่าเสื่อม ณ โรงพยาบาลส่งเสริมสุขภาพตำบลบ้านจำปาดง"
+}, {
+  name: "นางชฎาพร ศรีสถาน",
+  title: "การพัฒนาโมบายแอปพลิเคชันสำหรับดูแลมารดาหลังคลอดด้วยศาสตร์การแพทย์แผนไทย"
+}, {
+  name: "นางสาวสุปานี โคตรวิชา",
+  title: "การพัฒนาระบบเฝ้าระวังเชิงรุกและจัดการภาวะวิกฤติผู้ป่วยจิตเวชในชุมชนผ่านนวัตกรรมดิจิทัล"
+}, {
+  name: "นางสาวอรอนงค์ ขวาธิจักร",
+  title: "การพัฒนาระบบแจ้งเตือนยาใกล้หมดอายุอัตโนมัติเพื่อลดมูลค่ายาสูญเสียและเพิ่มประสิทธิภาพการบริหารคลังยาปฐมภูมิ (Smart FEFO & Drug Expiry Alert System)"
+}, {
+  name: "นางศันสนีย์ มีพรม",
+  title: "พัฒนาระบบส่งต่อข้อมูลผู้ป่วยเบาหวานและความดันโลหิตในชุมชนโดยการประยุกต์ใช้ปัญญาประดิษฐ์ร่วมกับระบบ Dashboard ออนไลน์แบบเรียลไทม์ รพ.สต.บ้านชมภูพานเหนือ ต.สร้างค้อ อ.ภูพาน"
+}, {
+  name: "นางพีระยา ศรีวัฒนาปิติกุล",
+  title: "ผลของกระบวนการ NATAL Smart Dengue-Free Model โดยอาศัยการมีส่วนร่วมของชุมชนบ้านนาตาล ตำบลนาตาล อำเภอเต่างอย จังหวัดสกลนคร"
+}, {
+  name: "นภาภรณ์ แก้วมุงคุณ",
+  title: "การพัฒนาแนวทางการดูแลผู้ป่วยโรคเบาหวานและโรคความดันโลหิตสูง ที่มีภาวะแทรกซ้อนทางไต โดยประยุกต์ใช้โปรแกรม \"รู้ รักษ์ ชะลอไตเสื่อม\" ร่วมกับนวัตกรรม \"สื่อเหรียญแทนระยะไตเสื่อม\""
+}, {
+  name: "นางหัฏฐญาณ์ ฤทธิ์นวล",
+  title: "การพัฒนาระบบการดูแลผู้ป่วยโรคเบาหวานและโรคความดันโลหิตสูงเพื่อชะลอการลดลงของระยะไตเสื่อม (Drop Stage) ในคลินิกโรคเรื้อรัง โรงพยาบาลส่งเสริมสุขภาพตำบลบ้านกกปลาซิว อำเภอภูพาน จังหวัดสกลนคร"
+}, {
+  name: "นายคำนึง แก้วเวียงเดช",
+  title: "การพัฒนาระบบบริการสุขภาพปฐมภูมิในยุคดิจิทัลโดยใช้ปัญญาประดิษฐ์ (AI) เพื่อการให้บริการอย่างยั่งยืน โดยใช้โนนหอมซิตี้ โมเดล"
+}];
+function PosterResultsModal({
+  onClose
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    onClick: onClose,
+    style: {
+      position: "fixed",
+      inset: 0,
+      background: "rgba(20,24,22,0.6)",
+      zIndex: 70,
+      display: "flex",
+      alignItems: "flex-start",
+      justifyContent: "center",
+      padding: "24px 16px",
+      overflowY: "auto"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: e => e.stopPropagation(),
+    style: {
+      position: "relative",
+      maxWidth: 640,
+      width: "100%",
+      background: "#fff",
+      borderRadius: 16,
+      padding: "24px 26px",
+      boxShadow: "0 12px 40px rgba(0,0,0,0.3)"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    style: {
+      position: "absolute",
+      top: 14,
+      right: 14,
+      width: 34,
+      height: 34,
+      borderRadius: "50%",
+      background: "var(--bg)",
+      border: "none",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    }
+  }, /*#__PURE__*/React.createElement(X, {
+    size: 18
+  })), /*#__PURE__*/React.createElement("h3", {
+    style: {
+      fontFamily: "Kanit, sans-serif",
+      fontSize: 17,
+      margin: "0 0 4px",
+      color: "var(--primary-dark)"
+    }
+  }, "🏆 ประกาศรายชื่อผู้ผ่านการคัดเลือกผลงานวิชาการ"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontFamily: "Sarabun, sans-serif",
+      fontSize: 12.5,
+      color: "var(--text-muted)",
+      margin: "0 0 4px",
+      lineHeight: 1.7
+    }
+  }, "ประเภท Poster Presentation — การประชุมวิชาการสมาคมหมออนามัยสกลนคร ประจำปี 2569", /*#__PURE__*/React.createElement("br", null), "ระหว่างวันที่ 7-9 กันยายน 2569 ณ โรงแรมเวลาดี (Hotel VELA Dhi Nakhon Phanom) จังหวัดนครพนม"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 14
+    }
+  }, POSTER_RESULTS_DATA.map((p, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      display: "flex",
+      gap: 10,
+      padding: "9px 4px",
+      borderBottom: "1px dashed var(--border)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 26,
+      height: 26,
+      borderRadius: "50%",
+      background: "var(--accent-2)",
+      color: "#fff",
+      flexShrink: 0,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontFamily: "Kanit, sans-serif",
+      fontWeight: 700,
+      fontSize: 12.5
+    }
+  }, i + 1), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: "Kanit, sans-serif",
+      fontWeight: 700,
+      fontSize: 13,
+      color: "var(--text)"
+    }
+  }, p.name), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: "Sarabun, sans-serif",
+      fontSize: 12,
+      color: "var(--text-muted)",
+      lineHeight: 1.6
+    }
+  }, p.title))))), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontFamily: "Sarabun, sans-serif",
+      fontSize: 11,
+      color: "var(--text-muted)",
+      marginTop: 14,
+      lineHeight: 1.7
+    }
+  }, "ขอแสดงความยินดีกับผู้ผ่านการคัดเลือกทุกท่าน 🎉 — อ้างอิงจากหนังสือส่งผลการคัดเลือกผลงานประเภทโปสเตอร์ (Poster Presentation) ลงวันที่ 3 กันยายน 2569")));
+}
 function Dashboard({submissions,setSubmissions,onRefresh,announcementUrl}){const[refreshing,setRefreshing]=useState(false);const handleManualRefresh=()=>{setRefreshing(true);Promise.resolve(onRefresh&&onRefresh()).finally(()=>setTimeout(()=>setRefreshing(false),400));};const counts=useMemo(()=>{const byMain={};Object.keys(CATS).forEach(k=>{byMain[k]=0;});submissions.forEach(s=>{if(byMain[s.main]!==undefined)byMain[s.main]++;});return byMain;},[submissions]);const[pageViews,setPageViews]=useState(null);const[downloadCount,setDownloadCount]=useState(null);const[listModalFor,setListModalFor]=useState(null);// category key or null
 const[filterUnit,setFilterUnit]=useState("");const[filterAmphoe,setFilterAmphoe]=useState("");const[filterType,setFilterType]=useState("");const[editModalFor,setEditModalFor]=useState(null);// submission ที่กำลังแจ้งขอแก้ไข/ยกเลิก
-const[showDressCodeModal,setShowDressCodeModal]=useState(false);const[showScheduleModal,setShowScheduleModal]=useState(false);React.useEffect(()=>{fetch(FIREBASE_DB_URL+"/analytics/pageViews.json").then(r=>r.json()).then(v=>setPageViews(typeof v==="number"?v:0)).catch(()=>setPageViews(0));fetch(FIREBASE_DB_URL+"/analytics/downloads.json").then(r=>r.json()).then(v=>setDownloadCount(typeof v==="number"?v:0)).catch(()=>setDownloadCount(0));},[]);const unitOptions=useMemo(()=>Array.from(new Set(submissions.map(s=>s.unit).filter(Boolean))).sort(),[submissions]);const amphoeOptions=useMemo(()=>Array.from(new Set(submissions.map(s=>s.amphoe).filter(Boolean))).sort(),[submissions]);const filteredSubmissions=submissions.filter(s=>!filterUnit||s.unit===filterUnit).filter(s=>!filterAmphoe||s.amphoe===filterAmphoe).filter(s=>!filterType||s.main===filterType);// สรุปจำนวนผู้ส่งผลงานแยกรายอำเภอ x ประเภท
+const[showDressCodeModal,setShowDressCodeModal]=useState(false);const[showScheduleModal,setShowScheduleModal]=useState(false);const[showPosterResultsModal,setShowPosterResultsModal]=useState(false);React.useEffect(()=>{fetch(FIREBASE_DB_URL+"/analytics/pageViews.json").then(r=>r.json()).then(v=>setPageViews(typeof v==="number"?v:0)).catch(()=>setPageViews(0));fetch(FIREBASE_DB_URL+"/analytics/downloads.json").then(r=>r.json()).then(v=>setDownloadCount(typeof v==="number"?v:0)).catch(()=>setDownloadCount(0));},[]);const unitOptions=useMemo(()=>Array.from(new Set(submissions.map(s=>s.unit).filter(Boolean))).sort(),[submissions]);const amphoeOptions=useMemo(()=>Array.from(new Set(submissions.map(s=>s.amphoe).filter(Boolean))).sort(),[submissions]);const filteredSubmissions=submissions.filter(s=>!filterUnit||s.unit===filterUnit).filter(s=>!filterAmphoe||s.amphoe===filterAmphoe).filter(s=>!filterType||s.main===filterType);// สรุปจำนวนผู้ส่งผลงานแยกรายอำเภอ x ประเภท
 const amphoeSummary=useMemo(()=>{const rows={};amphoeOptions.forEach(a=>{rows[a]={amphoe:a,total:0};Object.keys(CATS).forEach(k=>{rows[a][k]=0;});});submissions.forEach(s=>{if(!s.amphoe||!rows[s.amphoe])return;rows[s.amphoe].total++;if(rows[s.amphoe][s.main]!==undefined)rows[s.amphoe][s.main]++;});return Object.values(rows).sort((a,b)=>b.total-a.total);},[submissions,amphoeOptions]);const outOfProvinceSubmissions=useMemo(()=>submissions.filter(s=>s.province&&s.province.trim()&&s.province.trim()!=="สกลนคร"),[submissions]);return/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{className:"sn-hero",style:{position:"relative",overflow:"hidden",borderRadius:20,background:"linear-gradient(120deg, var(--primary-dark) 0%, var(--primary) 55%, var(--accent-2) 130%)",color:"#fff",padding:"36px 40px",marginBottom:28}},/*#__PURE__*/React.createElement("svg",{width:"100%",height:"100%",viewBox:"0 0 1200 340",style:{position:"absolute",inset:0,opacity:0.16},preserveAspectRatio:"xMidYMid slice"},[...Array(12)].map((_,i)=>/*#__PURE__*/React.createElement("circle",{key:i,cx:90+i*95,cy:50+i%3*100,r:"4",fill:"#fff"})),[...Array(11)].map((_,i)=>/*#__PURE__*/React.createElement("line",{key:i,x1:90+i*95,y1:50+i%3*100,x2:90+(i+1)*95,y2:50+(i+1)%3*100,stroke:"#fff",strokeWidth:"1.2"}))),/*#__PURE__*/React.createElement("div",{className:"sn-hero-top",style:{position:"relative",display:"flex",alignItems:"center",gap:15,marginBottom:15}},/*#__PURE__*/React.createElement("img",{src:LOGO_SRC,alt:"โลโก้สมาคมหมออนามัยสกลนคร",className:"sn-hero-logo",style:{width:67,height:67,borderRadius:"50%",background:"#fff",flexShrink:0,boxShadow:"0 4px 16px rgba(0,0,0,0.28)",border:"3px solid rgba(255,255,255,0.85)"}}),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{className:"sn-hero-name",style:{fontFamily:"Kanit, sans-serif",fontWeight:700,fontSize:24,lineHeight:1.15}},"สมาคมหมออนามัยสกลนคร"),/*#__PURE__*/React.createElement("div",{className:"sn-hero-addr",style:{fontFamily:"Sarabun, sans-serif",fontSize:10,opacity:0.85,marginTop:4}},"เลขที่ 20 ถนนใสสว่าง อำเภอเมืองสกลนคร จังหวัดสกลนคร \xA0·\xA0 โทรศัพท์ 042-712-473"))),/*#__PURE__*/React.createElement("div",{style:{position:"relative"}},/*#__PURE__*/React.createElement("div",{className:"sn-hero-badge",style:{display:"inline-block",fontFamily:"Kanit, sans-serif",fontWeight:700,fontSize:16,color:"#3D2B08",background:"var(--accent)",borderRadius:20,padding:"5px 16px",marginBottom:10}},"ระบบการส่งผลงานวิชาการ 2569"),/*#__PURE__*/React.createElement("div",{className:"sn-hero-eyebrow",style:{fontFamily:"Sarabun, sans-serif",fontSize:13.5,fontWeight:700,letterSpacing:"0.08em",opacity:0.9,textTransform:"uppercase"}},"การประชุมวิชาการสมาคมหมออนามัยสกลนคร ประจำปี 2569"),/*#__PURE__*/React.createElement("h1",{className:"sn-hero-h1",style:{fontFamily:"Kanit, sans-serif",fontSize:27,lineHeight:1.4,fontWeight:700,margin:"11px 0 18px",maxWidth:820}},"การพัฒนาระบบบริการสุขภาพปฐมภูมิในยุคดิจิทัลโดยใช้ปัญญาประดิษฐ์ (AI) เพื่อการให้บริการอย่างยั่งยืน"),/*#__PURE__*/React.createElement("div",{className:"sn-hero-pills",style:{display:"flex",gap:14,flexWrap:"wrap"}},/*#__PURE__*/React.createElement("div",{className:"sn-hero-pill",style:{display:"flex",alignItems:"center",gap:10,background:"rgba(255,255,255,0.16)",border:"1px solid rgba(255,255,255,0.3)",borderRadius:12,padding:"10px 18px",fontFamily:"Kanit, sans-serif",fontWeight:600,fontSize:15.5}},"📅 7–9 กันยายน 2569"),/*#__PURE__*/React.createElement("div",{className:"sn-hero-pill",style:{display:"flex",alignItems:"center",gap:10,background:"rgba(255,255,255,0.16)",border:"1px solid rgba(255,255,255,0.3)",borderRadius:12,padding:"10px 18px",fontFamily:"Kanit, sans-serif",fontWeight:600,fontSize:15.5}},"📍 โรงแรมเวลาดี (Hotel VELA Dhi Nakhon Phanom) อำเภอเมือง จังหวัดนครพนม")))),/*#__PURE__*/React.createElement("div",{style:{display:"flex",gap:18,alignItems:"center",background:"#fff",border:"2px solid var(--danger)",borderRadius:16,padding:"18px 22px",marginBottom:28,boxShadow:"0 8px 22px rgba(193,68,59,0.15)",flexWrap:"wrap"}},/*#__PURE__*/React.createElement("div",{style:{width:56,height:56,borderRadius:"50%",background:"#FDE8E8",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,flexShrink:0}},"📢"),/*#__PURE__*/React.createElement("div",{style:{flex:1,minWidth:240}},/*#__PURE__*/React.createElement("div",{className:"sn-blink",style:{fontFamily:"Kanit, sans-serif",fontWeight:700,fontSize:16,color:"var(--danger)",marginBottom:4}},"ประกาศ! ปรับลดค่าลงทะเบียนเหลือ 3,000 บาท"),/*#__PURE__*/React.createElement("div",{style:{fontFamily:"Sarabun, sans-serif",fontSize:13,color:"var(--text)",lineHeight:1.7}},"สมาคมหมออนามัยสกลนครขอแจ้งปรับลดค่าลงทะเบียนจาก 3,500 บาท เหลือ ",/*#__PURE__*/React.createElement("b",null,"3,000 บาท")," และขยายเวลาลงทะเบียนถึงวันที่ ",/*#__PURE__*/React.createElement("b",null,"28 สิงหาคม 2569")," — คลิกดูหนังสือประกาศฉบับเต็มได้ที่ปุ่มด้านขวา")),announcementUrl?/*#__PURE__*/React.createElement("a",{href:announcementUrl,target:"_blank",rel:"noopener noreferrer",style:{display:"flex",alignItems:"center",gap:8,background:"var(--danger)",color:"#fff",textDecoration:"none",borderRadius:10,padding:"11px 20px",fontFamily:"Kanit, sans-serif",fontWeight:600,fontSize:13.5,flexShrink:0}},/*#__PURE__*/React.createElement(FileText,{size:16})," ดูประกาศฉบับเต็ม"):/*#__PURE__*/React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,background:"#E7B9B9",color:"#fff",borderRadius:10,padding:"11px 20px",fontFamily:"Kanit, sans-serif",fontWeight:600,fontSize:13.5,flexShrink:0}},/*#__PURE__*/React.createElement(FileText,{size:16})," กำลังเตรียมไฟล์...")),/*#__PURE__*/React.createElement("button",{onClick:()=>setShowDressCodeModal(true),style:{display:"flex",alignItems:"center",gap:16,width:"100%",textAlign:"left",cursor:"pointer",background:"linear-gradient(120deg, #E8F0FE 0%, #DCE9FC 100%)",border:"2px solid #2C4C8C",borderRadius:16,padding:"14px 20px",marginBottom:28}},/*#__PURE__*/React.createElement("div",{style:{width:52,height:52,borderRadius:12,background:"#2C4C8C",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}},"👔"),/*#__PURE__*/React.createElement("div",{style:{flex:1,minWidth:200}},/*#__PURE__*/React.createElement("div",{style:{fontFamily:"Kanit, sans-serif",fontWeight:700,fontSize:15,color:"#1F3562",marginBottom:2}},"แนวทางการแต่งกาย การประชุมวิชาการ ประจำปี 2569"),/*#__PURE__*/React.createElement("div",{style:{fontFamily:"Sarabun, sans-serif",fontSize:12.5,color:"#3E5A94"}},"ธีมการแต่งกายทั้ง 3 วัน (7–9 กันยายน 2569) — คลิกดูรายละเอียด")),/*#__PURE__*/React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,background:"#2C4C8C",color:"#fff",borderRadius:9,padding:"9px 16px",fontFamily:"Kanit, sans-serif",fontWeight:600,fontSize:13,flexShrink:0}},"ดูรายละเอียด ",/*#__PURE__*/React.createElement(ChevronRight,{size:15}))),showDressCodeModal&&/*#__PURE__*/React.createElement("div",{onClick:()=>setShowDressCodeModal(false),style:{position:"fixed",inset:0,background:"rgba(20,24,22,0.6)",zIndex:70,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"24px 16px",overflowY:"auto"}},/*#__PURE__*/React.createElement("div",{onClick:e=>e.stopPropagation(),style:{position:"relative",maxWidth:520,width:"100%"}},/*#__PURE__*/React.createElement("button",{onClick:()=>setShowDressCodeModal(false),style:{position:"absolute",top:-14,right:-14,width:36,height:36,borderRadius:"50%",background:"#fff",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 12px rgba(0,0,0,0.25)",zIndex:1}},/*#__PURE__*/React.createElement(X,{size:20})),/*#__PURE__*/React.createElement("img",{src:DRESS_CODE_SRC,alt:"แนวทางการแต่งกาย การประชุมวิชาการ ประจำปี 2569",style:{width:"100%",height:"auto",borderRadius:14,display:"block",boxShadow:"0 12px 40px rgba(0,0,0,0.3)"}}))),/*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
   onClick: () => setShowScheduleModal(true),
   style: {
@@ -578,6 +720,82 @@ const amphoeSummary=useMemo(()=>{const rows={};amphoeOptions.forEach(a=>{rows[a]
   size: 15
 }))), showScheduleModal && /*#__PURE__*/React.createElement(ScheduleModal, {
   onClose: () => setShowScheduleModal(false)
+})),/*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+  onClick: () => setShowPosterResultsModal(true),
+  style: {
+    display: "flex",
+    alignItems: "center",
+    gap: 16,
+    width: "100%",
+    textAlign: "left",
+    cursor: "pointer",
+    background: "linear-gradient(120deg, #FFF6E0 0%, #FDE9C8 100%)",
+    border: "2px solid var(--accent)",
+    borderRadius: 16,
+    padding: "14px 20px",
+    marginBottom: 28,
+    position: "relative",
+    overflow: "hidden"
+  }
+}, /*#__PURE__*/React.createElement("span", {
+  style: {
+    position: "absolute",
+    right: -10,
+    top: -14,
+    fontSize: 60,
+    opacity: 0.12,
+    transform: "rotate(-8deg)"
+  }
+}, "🏆"), /*#__PURE__*/React.createElement("div", {
+  style: {
+    width: 52,
+    height: 52,
+    borderRadius: 12,
+    background: "var(--accent-2)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 24,
+    flexShrink: 0
+  }
+}, "🏆"), /*#__PURE__*/React.createElement("div", {
+  style: {
+    flex: 1,
+    minWidth: 200
+  }
+}, /*#__PURE__*/React.createElement("div", {
+  className: "sn-blink",
+  style: {
+    fontFamily: "Kanit, sans-serif",
+    fontWeight: 700,
+    fontSize: 15,
+    color: "#7A4B12",
+    marginBottom: 2
+  }
+}, "🎉 ประกาศผลผู้ผ่านการคัดเลือก ประเภท Poster Presentation ✨"), /*#__PURE__*/React.createElement("div", {
+  style: {
+    fontFamily: "Sarabun, sans-serif",
+    fontSize: 12.5,
+    color: "#8A6A3E"
+  }
+}, "ขอแสดงความยินดีกับผู้ผ่านการคัดเลือกทุกท่าน — คลิกดูรายชื่อทั้งหมด")), /*#__PURE__*/React.createElement("div", {
+  style: {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    background: "var(--accent-2)",
+    color: "#fff",
+    borderRadius: 9,
+    padding: "9px 16px",
+    fontFamily: "Kanit, sans-serif",
+    fontWeight: 600,
+    fontSize: 13,
+    flexShrink: 0
+  }
+}, "ดูรายชื่อ ", /*#__PURE__*/React.createElement(ChevronRight, {
+  size: 15
+}))), showPosterResultsModal && /*#__PURE__*/React.createElement(PosterResultsModal, {
+  onClose: () => setShowPosterResultsModal(false)
 })),/*#__PURE__*/React.createElement("div",{className:"sn-deadline-row",style:{display:"flex",gap:16,marginBottom:28,alignItems:"stretch"}},/*#__PURE__*/React.createElement("div",{style:{flex:"1.6 1 420px",borderRadius:16,overflow:"hidden",boxShadow:"0 8px 22px rgba(217,164,65,0.25)",background:"linear-gradient(120deg, #FFF6E0 0%, #FDE9C8 55%, #FFF6E0 100%)",border:"3px solid var(--accent)",padding:"18px 22px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center"}},/*#__PURE__*/React.createElement("div",{style:{fontFamily:"Kanit, sans-serif",fontSize:17,fontWeight:700,color:"#B0731E",letterSpacing:"0.03em",marginBottom:8}},"📢 เชิญชวนส่งผลงานวิชาการ 📢"),/*#__PURE__*/React.createElement("div",{className:"sn-blink",style:{fontFamily:"Kanit, sans-serif",fontSize:20,fontWeight:700,color:"#7A4B12",lineHeight:1.5}},"✨ ร่วมเป็นส่วนหนึ่งของเวทีวิชาการหมออนามัยสกลนคร 2569 ✨"),/*#__PURE__*/React.createElement("div",{style:{fontFamily:"Kanit, sans-serif",fontSize:14.5,fontWeight:600,color:"#B0731E",marginTop:4}},"ตั้งแต่วันนี้ ถึง 31 สิงหาคม 2569"),/*#__PURE__*/React.createElement("div",{style:{fontFamily:"Sarabun, sans-serif",fontSize:13,color:"#8A6A3E",marginTop:8,lineHeight:1.7}},"🩺 Oral Presentation · 🖼️ Poster · 🎬 หนังสั้น · 📸 ภาพเล่าเรื่อง — เปิดกว้างทุกไอเดียสร้างสรรค์"),/*#__PURE__*/React.createElement("div",{style:{fontFamily:"Kanit, sans-serif",fontSize:15,fontWeight:700,color:"#7A4B12",marginTop:6,lineHeight:1.6}},"🏆 พร้อมเงินรางวัลการประกวดผลงานวิชาการ",/*#__PURE__*/React.createElement("br",null),"📜 ผู้ส่งผลงานทุกท่านได้รับเกียรติบัตรจากสมาคมหมออนามัยสกลนคร")),/*#__PURE__*/React.createElement("div",{className:"sn-qr-box",style:{flex:"1 1 300px",display:"flex",alignItems:"center",gap:14,background:"#fff",border:"1px solid var(--border)",borderRadius:16,padding:"14px 16px",boxShadow:"0 8px 22px rgba(11,110,91,0.1)"}},/*#__PURE__*/React.createElement("img",{src:QR_LINE_SRC,alt:"LINE QR สอบถามข้อมูลเพิ่มเติม",style:{width:100,height:100,borderRadius:10,background:"#fff",padding:5,flexShrink:0,border:"1px solid var(--border)"}}),/*#__PURE__*/React.createElement("div",{style:{fontFamily:"Sarabun, sans-serif",fontSize:11.5,color:"var(--text-muted)",lineHeight:1.65}},"สำหรับผู้สนใจสามารถสอบถามรายละเอียดเพิ่มเติม มีข้อสงสัยติดต่อ",/*#__PURE__*/React.createElement("br",null),"☎️ ",/*#__PURE__*/React.createElement("b",{style:{color:"var(--text)"}},"นายพัฒนาวุฒิ เรืองสวัสดิ์")," ประธานฝ่ายวิชาการฯ",/*#__PURE__*/React.createElement("br",null),"โทร ",/*#__PURE__*/React.createElement("b",{style:{color:"var(--accent-2)"}},"095-194-7724"),/*#__PURE__*/React.createElement("br",null),"หรือ ☎️ ",/*#__PURE__*/React.createElement("b",{style:{color:"var(--text)"}},"นายพงศกร แป่มจำนัก")," กรรมการและเลขานุการฝ่ายวิชาการ/ผู้ดูแลระบบ",/*#__PURE__*/React.createElement("br",null),"โทร ",/*#__PURE__*/React.createElement("b",{style:{color:"var(--accent-2)"}},"064-949-9889"),/*#__PURE__*/React.createElement("br",null),"หรือ 📱 สแกนเข้ากลุ่มไลน์"))),/*#__PURE__*/React.createElement("div",{style:{background:"linear-gradient(160deg, #FBFAF6 0%, #F1EEE4 55%, #FBFAF6 100%)",border:"1px solid #E4DFD2",borderRadius:20,marginBottom:28,overflow:"hidden",boxShadow:"0 10px 28px rgba(11,110,91,0.08)"}},/*#__PURE__*/React.createElement("style",null,`
           @keyframes marqueeScroll { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
           @keyframes blinkPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.55; transform: scale(0.94); } }
