@@ -1683,9 +1683,236 @@ if(s.hasFiles){fetch(FIREBASE_DB_URL+"/submission_files/"+s.id+".json",{method:"
   }
 }, /*#__PURE__*/React.createElement(FileText, {
   size: 15
-}), "📊 ส่งออกรายชื่อผู้ส่ง (Excel)")),/*#__PURE__*/React.createElement("div",{style:{display:"flex",gap:10,marginBottom:18,flexWrap:"wrap",alignItems:"center"}},/*#__PURE__*/React.createElement("select",{value:filterType,onChange:e=>setFilterType(e.target.value),style:{...selStyle,width:"auto",marginTop:0}},/*#__PURE__*/React.createElement("option",{value:"all"},"ทุกประเภท (",submissions.length,")"),Object.values(CATS).map(c=>/*#__PURE__*/React.createElement("option",{key:c.key,value:c.key},c.label," (",submissions.filter(s=>s.main===c.key).length,")"))),/*#__PURE__*/React.createElement("select",{value:filterAmphoe,onChange:e=>setFilterAmphoe(e.target.value),style:{...selStyle,width:"auto",marginTop:0}},/*#__PURE__*/React.createElement("option",{value:"all"},"ทุกอำเภอ"),amphoeOptions.map(a=>/*#__PURE__*/React.createElement("option",{key:a,value:a},a," (",submissions.filter(s=>s.amphoe===a).length,")"))),/*#__PURE__*/React.createElement("input",{value:search,onChange:e=>setSearch(e.target.value),placeholder:"ค้นหาชื่อผู้ส่ง / หน่วยบริการ / ชื่อผลงาน",style:{...selStyle,width:"100%",maxWidth:280,marginTop:0}})),/*#__PURE__*/React.createElement("div",{style:{background:"#fff",border:"1px solid var(--border)",borderRadius:16,overflow:"hidden"}},/*#__PURE__*/React.createElement("div",{style:{overflowX:"auto"}},/*#__PURE__*/React.createElement("table",{style:{width:"100%",borderCollapse:"collapse",fontFamily:"Sarabun, sans-serif",fontSize:13.5}},/*#__PURE__*/React.createElement("thead",null,/*#__PURE__*/React.createElement("tr",{style:{background:"var(--bg)",textAlign:"left"}},["ลำดับ","ผู้ส่งผลงาน","ข้อมูลส่วนตัว","ชื่อผลงาน","ประเภท","รางวัล","ไฟล์ผลงานจริง","เกียรติบัตร","จัดการ"].map(h=>/*#__PURE__*/React.createElement("th",{key:h,style:{padding:"10px 16px",fontWeight:600,color:"var(--text-muted)",whiteSpace:"nowrap"}},h)))),/*#__PURE__*/React.createElement("tbody",null,list.map((s,i)=>/*#__PURE__*/React.createElement(React.Fragment,{key:s.id},/*#__PURE__*/React.createElement("tr",{style:{borderTop:"1px solid var(--border)"}},/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px"}},i+1),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px",whiteSpace:"nowrap"}},s.name),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px"}},/*#__PURE__*/React.createElement("button",{onClick:()=>setExpandedId(expandedId===s.id?null:s.id),style:{display:"flex",alignItems:"center",gap:5,background:"#fff",color:"var(--text-muted)",border:"1px solid var(--border)",borderRadius:8,padding:"6px 10px",fontFamily:"Sarabun, sans-serif",fontSize:12,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}},expandedId===s.id?/*#__PURE__*/React.createElement(ChevronDown,{size:13}):/*#__PURE__*/React.createElement(ChevronRight,{size:13})," ดูข้อมูลส่วนตัว")),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px",maxWidth:220}},s.title),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px",whiteSpace:"nowrap"}},/*#__PURE__*/React.createElement("span",{style:{display:"inline-flex",alignItems:"center",gap:6}},/*#__PURE__*/React.createElement(CatIcon,{main:s.main,size:13})," ",CATS[s.main].label," · ",s.sub)),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px"}},/*#__PURE__*/React.createElement("select",{value:s.award||"",onChange:e=>setSubmissions(submissions.map(x=>x.id===s.id?{...x,award:e.target.value||null}:x)),style:{border:"1px solid var(--border)",borderRadius:8,padding:"7px 8px",fontFamily:"Sarabun, sans-serif",fontSize:12,background:s.award?"#FBF0DE":"#fff",color:s.award?"#7A4B12":"var(--text-muted)",fontWeight:s.award?700:400}},/*#__PURE__*/React.createElement("option",{value:""},"-- ยังไม่ตัดสิน --"),AWARD_RANKS.map(r=>/*#__PURE__*/React.createElement("option",{key:r,value:r},r)))),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px"}},s.hasFiles||s.wordFile||s.pdfFile||s.main==="photo"&&s.fileUrl?/*#__PURE__*/React.createElement("div",{style:{display:"flex",gap:6,flexWrap:"wrap"}},s.main==="photo"&&s.fileUrl&&/*#__PURE__*/React.createElement("a",{href:s.fileUrl,target:"_blank",rel:"noopener noreferrer",style:{display:"flex",alignItems:"center",gap:8,textDecoration:"none"}},/*#__PURE__*/React.createElement("img",{src:s.fileUrl,alt:s.title,style:{width:34,height:34,borderRadius:6,objectFit:"cover",border:"1px solid var(--border)"}}),/*#__PURE__*/React.createElement("span",{style:{display:"flex",alignItems:"center",gap:5,background:"#8E44AD",color:"#fff",borderRadius:8,padding:"7px 10px",fontFamily:"Sarabun, sans-serif",fontSize:12,fontWeight:600}},/*#__PURE__*/React.createElement(Camera,{size:12})," ดูภาพ")),(s.wordFileName||s.wordFile)&&/*#__PURE__*/React.createElement("button",{onClick:()=>downloadSubmissionFile(s,"wordFile",downloadingId,setDownloadingId),disabled:downloadingId===s.id+"-wordFile",style:{display:"flex",alignItems:"center",gap:5,background:"var(--primary)",color:"#fff",border:"none",borderRadius:8,padding:"7px 10px",fontFamily:"Sarabun, sans-serif",fontSize:12,fontWeight:600,cursor:"pointer"}},/*#__PURE__*/React.createElement(Download,{size:12})," ",downloadingId===s.id+"-wordFile"?"...":"Word"),(s.pdfFileName||s.pdfFile)&&/*#__PURE__*/React.createElement("button",{onClick:()=>downloadSubmissionFile(s,"pdfFile",downloadingId,setDownloadingId),disabled:downloadingId===s.id+"-pdfFile",style:{display:"flex",alignItems:"center",gap:5,background:"var(--danger)",color:"#fff",border:"none",borderRadius:8,padding:"7px 10px",fontFamily:"Sarabun, sans-serif",fontSize:12,fontWeight:600,cursor:"pointer"}},/*#__PURE__*/React.createElement(Download,{size:12})," ",downloadingId===s.id+"-pdfFile"?"...":"PDF")):/*#__PURE__*/React.createElement("button",{onClick:()=>s.fileUrl?window.open(s.fileUrl,"_blank"):s.main==="film"?window.open(s.file,"_blank"):alert(`ดาวน์โหลดไฟล์จริง: ${s.file}\n(ผลงานนี้ส่งก่อนเปิดใช้ระบบอัปโหลดไฟล์จริง)`),style:{display:"flex",alignItems:"center",gap:6,background:"var(--primary)",color:"#fff",border:"none",borderRadius:8,padding:"7px 12px",fontFamily:"Sarabun, sans-serif",fontSize:12.5,fontWeight:600,cursor:"pointer"}},/*#__PURE__*/React.createElement(Download,{size:13})," ดาวน์โหลด")),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px"}},/*#__PURE__*/React.createElement("button",{onClick:()=>setCertFor(s),style:{display:"flex",alignItems:"center",gap:6,background:"var(--accent)",color:"#3D2B08",border:"none",borderRadius:8,padding:"7px 12px",fontFamily:"Sarabun, sans-serif",fontSize:12.5,fontWeight:600,cursor:"pointer"}},/*#__PURE__*/React.createElement(Award,{size:13})," ออกเกียรติบัตร")),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px"}},/*#__PURE__*/React.createElement("div",{style:{display:"flex",gap:6}},/*#__PURE__*/React.createElement("button",{onClick:()=>setEditFor(s),title:"แก้ไข",style:{display:"flex",alignItems:"center",justifyContent:"center",background:"#fff",color:"var(--accent-2)",border:"1px solid var(--accent-2)",borderRadius:8,padding:"7px 9px",cursor:"pointer"}},/*#__PURE__*/React.createElement(FileType2,{size:13})),/*#__PURE__*/React.createElement("button",{onClick:()=>deleteSubmission(s),title:"ลบ",style:{display:"flex",alignItems:"center",justifyContent:"center",background:"#fff",color:"var(--danger)",border:"1px solid var(--danger)",borderRadius:8,padding:"7px 9px",cursor:"pointer"}},/*#__PURE__*/React.createElement(Trash2,{size:13}))))),expandedId===s.id&&/*#__PURE__*/React.createElement("tr",{style:{background:"var(--bg)"}},/*#__PURE__*/React.createElement("td",{colSpan:9,style:{padding:"14px 20px"}},/*#__PURE__*/React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(160px, 1fr))",gap:12,fontFamily:"Sarabun, sans-serif",fontSize:13}},/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5}},"ตำแหน่ง"),/*#__PURE__*/React.createElement("div",{style:{fontWeight:600}},s.position||"-")),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5}},"โทรศัพท์"),/*#__PURE__*/React.createElement("div",{style:{fontWeight:600}},s.phone||"-")),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5}},"LINE ID"),/*#__PURE__*/React.createElement("div",{style:{fontWeight:600}},s.line||"-")),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5}},"หน่วยบริการ"),/*#__PURE__*/React.createElement("div",{style:{fontWeight:600}},s.unit||"-")),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5}},"อำเภอ"),/*#__PURE__*/React.createElement("div",{style:{fontWeight:600}},s.amphoe||"-")),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5}},"จังหวัด"),/*#__PURE__*/React.createElement("div",{style:{fontWeight:600}},s.province||"-"))),s.main==="photo"&&s.caption&&/*#__PURE__*/React.createElement("div",{style:{marginTop:12,background:"#fff",border:"1px solid var(--border)",borderRadius:10,padding:"10px 14px"}},/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5,marginBottom:4}},"คำบรรยายใต้ภาพ"),/*#__PURE__*/React.createElement("div",{style:{fontStyle:"italic"}},"\"",s.caption,"\"")),/*#__PURE__*/React.createElement("button",{onClick:()=>setEditFor(s),style:{marginTop:12,display:"flex",alignItems:"center",gap:6,background:"#fff",color:"var(--accent-2)",border:"1px solid var(--accent-2)",borderRadius:8,padding:"7px 12px",fontFamily:"Sarabun, sans-serif",fontSize:12,fontWeight:600,cursor:"pointer"}},/*#__PURE__*/React.createElement(FileType2,{size:13})," แก้ไขข้อมูลนี้"))))),list.length===0&&/*#__PURE__*/React.createElement("tr",null,/*#__PURE__*/React.createElement("td",{colSpan:9,style:{padding:20,textAlign:"center",color:"var(--text-muted)"}},"ไม่พบผลงานที่ตรงกับเงื่อนไข")))))),certFor&&/*#__PURE__*/React.createElement(CertificateModal,{submission:certFor,onClose:()=>setCertFor(null)}),editFor&&/*#__PURE__*/React.createElement(EditSubmissionModal,{submission:editFor,submissions:submissions,setSubmissions:setSubmissions,onClose:()=>setEditFor(null)}),/*#__PURE__*/React.createElement(AwardResultsReport,{submissions:submissions}));}/* ----------------------------------------------------------------------
+}), "📊 ส่งออกรายชื่อผู้ส่ง (Excel)")),/*#__PURE__*/React.createElement("div",{style:{display:"flex",gap:10,marginBottom:18,flexWrap:"wrap",alignItems:"center"}},/*#__PURE__*/React.createElement("select",{value:filterType,onChange:e=>setFilterType(e.target.value),style:{...selStyle,width:"auto",marginTop:0}},/*#__PURE__*/React.createElement("option",{value:"all"},"ทุกประเภท (",submissions.length,")"),Object.values(CATS).map(c=>/*#__PURE__*/React.createElement("option",{key:c.key,value:c.key},c.label," (",submissions.filter(s=>s.main===c.key).length,")"))),/*#__PURE__*/React.createElement("select",{value:filterAmphoe,onChange:e=>setFilterAmphoe(e.target.value),style:{...selStyle,width:"auto",marginTop:0}},/*#__PURE__*/React.createElement("option",{value:"all"},"ทุกอำเภอ"),amphoeOptions.map(a=>/*#__PURE__*/React.createElement("option",{key:a,value:a},a," (",submissions.filter(s=>s.amphoe===a).length,")"))),/*#__PURE__*/React.createElement("input",{value:search,onChange:e=>setSearch(e.target.value),placeholder:"ค้นหาชื่อผู้ส่ง / หน่วยบริการ / ชื่อผลงาน",style:{...selStyle,width:"100%",maxWidth:280,marginTop:0}})),/*#__PURE__*/React.createElement("div",{style:{background:"#fff",border:"1px solid var(--border)",borderRadius:16,overflow:"hidden"}},/*#__PURE__*/React.createElement("div",{style:{overflowX:"auto"}},/*#__PURE__*/React.createElement("table",{style:{width:"100%",borderCollapse:"collapse",fontFamily:"Sarabun, sans-serif",fontSize:13.5}},/*#__PURE__*/React.createElement("thead",null,/*#__PURE__*/React.createElement("tr",{style:{background:"var(--bg)",textAlign:"left"}},["ลำดับ","ผู้ส่งผลงาน","ข้อมูลส่วนตัว","ชื่อผลงาน","ประเภท","รางวัล","ไฟล์ผลงานจริง","เกียรติบัตร","จัดการ"].map(h=>/*#__PURE__*/React.createElement("th",{key:h,style:{padding:"10px 16px",fontWeight:600,color:"var(--text-muted)",whiteSpace:"nowrap"}},h)))),/*#__PURE__*/React.createElement("tbody",null,list.map((s,i)=>/*#__PURE__*/React.createElement(React.Fragment,{key:s.id},/*#__PURE__*/React.createElement("tr",{style:{borderTop:"1px solid var(--border)"}},/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px"}},i+1),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px",whiteSpace:"nowrap"}},s.name),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px"}},/*#__PURE__*/React.createElement("button",{onClick:()=>setExpandedId(expandedId===s.id?null:s.id),style:{display:"flex",alignItems:"center",gap:5,background:"#fff",color:"var(--text-muted)",border:"1px solid var(--border)",borderRadius:8,padding:"6px 10px",fontFamily:"Sarabun, sans-serif",fontSize:12,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}},expandedId===s.id?/*#__PURE__*/React.createElement(ChevronDown,{size:13}):/*#__PURE__*/React.createElement(ChevronRight,{size:13})," ดูข้อมูลส่วนตัว")),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px",maxWidth:220}},s.title),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px",whiteSpace:"nowrap"}},/*#__PURE__*/React.createElement("span",{style:{display:"inline-flex",alignItems:"center",gap:6}},/*#__PURE__*/React.createElement(CatIcon,{main:s.main,size:13})," ",CATS[s.main].label," · ",s.sub)),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px"}},/*#__PURE__*/React.createElement("select",{value:s.award||"",onChange:e=>setSubmissions(submissions.map(x=>x.id===s.id?{...x,award:e.target.value||null}:x)),style:{border:"1px solid var(--border)",borderRadius:8,padding:"7px 8px",fontFamily:"Sarabun, sans-serif",fontSize:12,background:s.award?"#FBF0DE":"#fff",color:s.award?"#7A4B12":"var(--text-muted)",fontWeight:s.award?700:400}},/*#__PURE__*/React.createElement("option",{value:""},"-- ยังไม่ตัดสิน --"),AWARD_RANKS.map(r=>/*#__PURE__*/React.createElement("option",{key:r,value:r},r)))),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px"}},s.hasFiles||s.wordFile||s.pdfFile||s.main==="photo"&&s.fileUrl?/*#__PURE__*/React.createElement("div",{style:{display:"flex",gap:6,flexWrap:"wrap"}},s.main==="photo"&&s.fileUrl&&/*#__PURE__*/React.createElement("a",{href:s.fileUrl,target:"_blank",rel:"noopener noreferrer",style:{display:"flex",alignItems:"center",gap:8,textDecoration:"none"}},/*#__PURE__*/React.createElement("img",{src:s.fileUrl,alt:s.title,style:{width:34,height:34,borderRadius:6,objectFit:"cover",border:"1px solid var(--border)"}}),/*#__PURE__*/React.createElement("span",{style:{display:"flex",alignItems:"center",gap:5,background:"#8E44AD",color:"#fff",borderRadius:8,padding:"7px 10px",fontFamily:"Sarabun, sans-serif",fontSize:12,fontWeight:600}},/*#__PURE__*/React.createElement(Camera,{size:12})," ดูภาพ")),(s.wordFileName||s.wordFile)&&/*#__PURE__*/React.createElement("button",{onClick:()=>downloadSubmissionFile(s,"wordFile",downloadingId,setDownloadingId),disabled:downloadingId===s.id+"-wordFile",style:{display:"flex",alignItems:"center",gap:5,background:"var(--primary)",color:"#fff",border:"none",borderRadius:8,padding:"7px 10px",fontFamily:"Sarabun, sans-serif",fontSize:12,fontWeight:600,cursor:"pointer"}},/*#__PURE__*/React.createElement(Download,{size:12})," ",downloadingId===s.id+"-wordFile"?"...":"Word"),(s.pdfFileName||s.pdfFile)&&/*#__PURE__*/React.createElement("button",{onClick:()=>downloadSubmissionFile(s,"pdfFile",downloadingId,setDownloadingId),disabled:downloadingId===s.id+"-pdfFile",style:{display:"flex",alignItems:"center",gap:5,background:"var(--danger)",color:"#fff",border:"none",borderRadius:8,padding:"7px 10px",fontFamily:"Sarabun, sans-serif",fontSize:12,fontWeight:600,cursor:"pointer"}},/*#__PURE__*/React.createElement(Download,{size:12})," ",downloadingId===s.id+"-pdfFile"?"...":"PDF")):/*#__PURE__*/React.createElement("button",{onClick:()=>s.fileUrl?window.open(s.fileUrl,"_blank"):s.main==="film"?window.open(s.file,"_blank"):alert(`ดาวน์โหลดไฟล์จริง: ${s.file}\n(ผลงานนี้ส่งก่อนเปิดใช้ระบบอัปโหลดไฟล์จริง)`),style:{display:"flex",alignItems:"center",gap:6,background:"var(--primary)",color:"#fff",border:"none",borderRadius:8,padding:"7px 12px",fontFamily:"Sarabun, sans-serif",fontSize:12.5,fontWeight:600,cursor:"pointer"}},/*#__PURE__*/React.createElement(Download,{size:13})," ดาวน์โหลด")),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px"}},/*#__PURE__*/React.createElement("button",{onClick:()=>setCertFor(s),style:{display:"flex",alignItems:"center",gap:6,background:"var(--accent)",color:"#3D2B08",border:"none",borderRadius:8,padding:"7px 12px",fontFamily:"Sarabun, sans-serif",fontSize:12.5,fontWeight:600,cursor:"pointer"}},/*#__PURE__*/React.createElement(Award,{size:13})," ออกเกียรติบัตร")),/*#__PURE__*/React.createElement("td",{style:{padding:"10px 16px"}},/*#__PURE__*/React.createElement("div",{style:{display:"flex",gap:6}},/*#__PURE__*/React.createElement("button",{onClick:()=>setEditFor(s),title:"แก้ไข",style:{display:"flex",alignItems:"center",justifyContent:"center",background:"#fff",color:"var(--accent-2)",border:"1px solid var(--accent-2)",borderRadius:8,padding:"7px 9px",cursor:"pointer"}},/*#__PURE__*/React.createElement(FileType2,{size:13})),/*#__PURE__*/React.createElement("button",{onClick:()=>deleteSubmission(s),title:"ลบ",style:{display:"flex",alignItems:"center",justifyContent:"center",background:"#fff",color:"var(--danger)",border:"1px solid var(--danger)",borderRadius:8,padding:"7px 9px",cursor:"pointer"}},/*#__PURE__*/React.createElement(Trash2,{size:13}))))),expandedId===s.id&&/*#__PURE__*/React.createElement("tr",{style:{background:"var(--bg)"}},/*#__PURE__*/React.createElement("td",{colSpan:9,style:{padding:"14px 20px"}},/*#__PURE__*/React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(160px, 1fr))",gap:12,fontFamily:"Sarabun, sans-serif",fontSize:13}},/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5}},"ตำแหน่ง"),/*#__PURE__*/React.createElement("div",{style:{fontWeight:600}},s.position||"-")),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5}},"โทรศัพท์"),/*#__PURE__*/React.createElement("div",{style:{fontWeight:600}},s.phone||"-")),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5}},"LINE ID"),/*#__PURE__*/React.createElement("div",{style:{fontWeight:600}},s.line||"-")),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5}},"หน่วยบริการ"),/*#__PURE__*/React.createElement("div",{style:{fontWeight:600}},s.unit||"-")),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5}},"อำเภอ"),/*#__PURE__*/React.createElement("div",{style:{fontWeight:600}},s.amphoe||"-")),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5}},"จังหวัด"),/*#__PURE__*/React.createElement("div",{style:{fontWeight:600}},s.province||"-"))),s.main==="photo"&&s.caption&&/*#__PURE__*/React.createElement("div",{style:{marginTop:12,background:"#fff",border:"1px solid var(--border)",borderRadius:10,padding:"10px 14px"}},/*#__PURE__*/React.createElement("div",{style:{color:"var(--text-muted)",fontSize:11.5,marginBottom:4}},"คำบรรยายใต้ภาพ"),/*#__PURE__*/React.createElement("div",{style:{fontStyle:"italic"}},"\"",s.caption,"\"")),/*#__PURE__*/React.createElement("button",{onClick:()=>setEditFor(s),style:{marginTop:12,display:"flex",alignItems:"center",gap:6,background:"#fff",color:"var(--accent-2)",border:"1px solid var(--accent-2)",borderRadius:8,padding:"7px 12px",fontFamily:"Sarabun, sans-serif",fontSize:12,fontWeight:600,cursor:"pointer"}},/*#__PURE__*/React.createElement(FileType2,{size:13})," แก้ไขข้อมูลนี้"))))),list.length===0&&/*#__PURE__*/React.createElement("tr",null,/*#__PURE__*/React.createElement("td",{colSpan:9,style:{padding:20,textAlign:"center",color:"var(--text-muted)"}},"ไม่พบผลงานที่ตรงกับเงื่อนไข")))))),certFor&&/*#__PURE__*/React.createElement(CertificateModal,{submission:certFor,onClose:()=>setCertFor(null)}),editFor&&/*#__PURE__*/React.createElement(EditSubmissionModal,{submission:editFor,submissions:submissions,setSubmissions:setSubmissions,onClose:()=>setEditFor(null)}),/*#__PURE__*/React.createElement(AwardResultsReport,{submissions:submissions}),/*#__PURE__*/React.createElement(PhotoReport,{submissions:submissions}));}/* ----------------------------------------------------------------------
    4a. รายงานผลการตัดสินรางวัล (ตามประเภทผลงาน)
----------------------------------------------------------------------- */function AwardResultsReport({submissions}){const awarded=submissions.filter(s=>s.award);if(awarded.length===0)return null;const groups=Object.values(CATS).map(c=>({cat:c,items:AWARD_RANKS.map(rank=>({rank,subs:awarded.filter(s=>s.main===c.key&&s.award===rank)})).filter(g=>g.subs.length>0)})).filter(g=>g.items.length>0);const buildHtml=()=>{let html=`<h1>ผลการตัดสินผลงานวิชาการ<br/>การประชุมวิชาการสมาคมหมออนามัยสกลนคร ประจำปี 2569</h1>`;groups.forEach(g=>{html+=`<h2>${g.cat.label}</h2><table><tr><th>รางวัล</th><th>ชื่อ-สกุล</th><th>ชื่อผลงาน</th><th>หน่วยบริการ</th></tr>`;g.items.forEach(it=>{it.subs.forEach((s,idx)=>{html+=`<tr>${idx===0?`<td rowspan="${it.subs.length}">${it.rank}</td>`:""}<td>${s.name}</td><td>${s.title}</td><td>${s.unit}</td></tr>`;});});html+=`</table>`;});return html;};return/*#__PURE__*/React.createElement("div",{className:"award-report-print-area",style:{background:"#fff",border:"1px solid var(--border)",borderRadius:16,padding:22,marginTop:26}},/*#__PURE__*/React.createElement("style",null,`
+---------------------------------------------------------------------- */function qrCodeUrl(data, size) {
+  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(data)}`;
+}
+function PhotoReport({
+  submissions
+}) {
+  const photoSubs = React.useMemo(() => {
+    return submissions.filter(s => s.main === "photo").slice().sort((a, b) => (a.submittedAt || 0) - (b.submittedAt || 0));
+  }, [submissions]);
+  if (photoSubs.length === 0) return null;
+  const buildHtml = () => {
+    let html = `<div style="text-align:center;margin-bottom:14px;"><img src="${LOGO_SRC}" style="width:56px;height:56px;border-radius:50%;" /></div>`;
+    html += `<h1 style="text-align:center;">ผลงานวิชาการ "โครงการประชุมวิชาการสมาคมหมออนามัยสกลนคร ประจำปีงบประมาณ พ.ศ. 2569"</h1>`;
+    html += `<h2 style="text-align:center;font-size:15pt;">ประเภท ภาพเล่าเรื่อง ถ่ายถอด ตัวตนและการทำงาน บำบัดทุกข์ บำรุงสุขของประชาชน ด้วยจิตวิญญาณของ "หมออนามัย"</h2>`;
+    html += `<p style="text-align:left;font-weight:bold;">ทั้งหมด ${photoSubs.length} ภาพ ดังนี้</p>`;
+    html += `<table><tr><th>ลำดับ</th><th>ชื่อ-สกุล</th><th>ตำแหน่ง</th><th>หน่วยบริการ</th><th>อำเภอ</th><th>จังหวัด</th><th>ชื่อเรื่อง</th><th>ลิงก์/QR code</th></tr>`;
+    photoSubs.forEach((s, i) => {
+      const link = s.photoUrl || s.fileUrl || "";
+      const qrImg = link ? `<img src="${qrCodeUrl(link, 100)}" width="90" height="90" /><br/><a href="${link}">ดูผลงาน</a>` : "-";
+      html += `<tr><td>${i + 1}</td><td>${s.name || ""}</td><td>${s.position || ""}</td><td>${s.unit || ""}</td><td>${s.amphoe || ""}</td><td>${s.province || ""}</td><td>${s.title || ""}</td><td style="text-align:center;">${qrImg}</td></tr>`;
+    });
+    html += `</table>`;
+    return html;
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "photo-report-print-area",
+    style: {
+      background: "#fff",
+      border: "1px solid var(--border)",
+      borderRadius: 16,
+      padding: 22,
+      marginTop: 26
+    }
+  }, /*#__PURE__*/React.createElement("style", null, `
+        @media print {
+          body * { visibility: hidden; }
+          .photo-report-print-area, .photo-report-print-area * { visibility: visible; }
+          .photo-report-print-area { position: absolute; top: 0; left: 0; width: 100%; }
+          .photo-report-noprint { display: none !important; }
+        }
+      `), /*#__PURE__*/React.createElement("div", {
+    className: "photo-report-noprint",
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      flexWrap: "wrap",
+      gap: 10,
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("h3", {
+    style: {
+      fontFamily: "Kanit, sans-serif",
+      fontSize: 17,
+      margin: 0,
+      display: "flex",
+      alignItems: "center",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement(Camera, {
+    size: 18,
+    color: "#8E44AD"
+  }), " รายงานผลงานภาพเล่าเรื่อง \"ชีวิตหมออนามัย\" (", photoSubs.length, " รายการ)"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => exportReportToWord("รายงานภาพเล่าเรื่อง", buildHtml(), "รายงานภาพเล่าเรื่อง-ชีวิตหมออนามัย-2569"),
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      background: "var(--primary)",
+      color: "#fff",
+      border: "none",
+      borderRadius: 9,
+      padding: "8px 14px",
+      fontFamily: "Sarabun, sans-serif",
+      fontSize: 12.5,
+      fontWeight: 600,
+      cursor: "pointer"
+    }
+  }, /*#__PURE__*/React.createElement(FileText, {
+    size: 14
+  }), " ส่งออก Word"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => window.print(),
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      background: "var(--danger)",
+      color: "#fff",
+      border: "none",
+      borderRadius: 9,
+      padding: "8px 14px",
+      fontFamily: "Sarabun, sans-serif",
+      fontSize: 12.5,
+      fontWeight: 600,
+      cursor: "pointer"
+    }
+  }, /*#__PURE__*/React.createElement(FileText, {
+    size: 14
+  }), " พิมพ์ / บันทึกเป็น PDF"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      marginBottom: 6
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    src: LOGO_SRC,
+    alt: "",
+    style: {
+      width: 48,
+      height: 48,
+      borderRadius: "50%"
+    }
+  })), /*#__PURE__*/React.createElement("h2", {
+    style: {
+      fontFamily: "Kanit, sans-serif",
+      fontSize: 16,
+      textAlign: "center",
+      marginBottom: 4
+    }
+  }, "ผลงานวิชาการ \"โครงการประชุมวิชาการสมาคมหมออนามัยสกลนคร ประจำปีงบประมาณ พ.ศ. 2569\""), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontFamily: "Sarabun, sans-serif",
+      fontSize: 13.5,
+      textAlign: "center",
+      color: "var(--text-muted)",
+      marginBottom: 4,
+      lineHeight: 1.7
+    }
+  }, "ประเภท ภาพเล่าเรื่อง ถ่ายถอด ตัวตนและการทำงาน บำบัดทุกข์ บำรุงสุขของประชาชน ด้วยจิตวิญญาณของ \"หมออนามัย\""), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontFamily: "Kanit, sans-serif",
+      fontWeight: 700,
+      fontSize: 13.5,
+      marginBottom: 12
+    }
+  }, "ทั้งหมด ", photoSubs.length, " ภาพ ดังนี้"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      overflowX: "auto"
+    }
+  }, /*#__PURE__*/React.createElement("table", {
+    style: {
+      width: "100%",
+      borderCollapse: "collapse",
+      fontFamily: "Sarabun, sans-serif",
+      fontSize: 12.5
+    }
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", {
+    style: {
+      background: "var(--bg)"
+    }
+  }, ["ลำดับ", "ชื่อ-สกุล", "ตำแหน่ง", "หน่วยบริการ", "อำเภอ", "จังหวัด", "ชื่อเรื่อง", "ลิงก์/QR code"].map(h => /*#__PURE__*/React.createElement("th", {
+    key: h,
+    style: {
+      border: "1px solid var(--border)",
+      padding: "8px 10px",
+      fontWeight: 700
+    }
+  }, h)))), /*#__PURE__*/React.createElement("tbody", null, photoSubs.map((s, i) => {
+    const link = s.photoUrl || s.fileUrl || "";
+    return /*#__PURE__*/React.createElement("tr", {
+      key: s.id
+    }, /*#__PURE__*/React.createElement("td", {
+      style: {
+        border: "1px solid var(--border)",
+        padding: "8px 10px",
+        textAlign: "center"
+      }
+    }, i + 1), /*#__PURE__*/React.createElement("td", {
+      style: {
+        border: "1px solid var(--border)",
+        padding: "8px 10px"
+      }
+    }, s.name), /*#__PURE__*/React.createElement("td", {
+      style: {
+        border: "1px solid var(--border)",
+        padding: "8px 10px"
+      }
+    }, s.position), /*#__PURE__*/React.createElement("td", {
+      style: {
+        border: "1px solid var(--border)",
+        padding: "8px 10px"
+      }
+    }, s.unit), /*#__PURE__*/React.createElement("td", {
+      style: {
+        border: "1px solid var(--border)",
+        padding: "8px 10px"
+      }
+    }, s.amphoe), /*#__PURE__*/React.createElement("td", {
+      style: {
+        border: "1px solid var(--border)",
+        padding: "8px 10px"
+      }
+    }, s.province), /*#__PURE__*/React.createElement("td", {
+      style: {
+        border: "1px solid var(--border)",
+        padding: "8px 10px"
+      }
+    }, s.title), /*#__PURE__*/React.createElement("td", {
+      style: {
+        border: "1px solid var(--border)",
+        padding: "8px 10px",
+        textAlign: "center"
+      }
+    }, link ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", {
+      src: qrCodeUrl(link, 100),
+      alt: "QR code",
+      style: {
+        width: 64,
+        height: 64,
+        display: "block",
+        margin: "0 auto 4px"
+      }
+    }), /*#__PURE__*/React.createElement("a", {
+      href: link,
+      target: "_blank",
+      rel: "noopener noreferrer",
+      style: {
+        fontSize: 11,
+        color: "var(--primary)"
+      }
+    }, "ดูผลงาน")) : "-"));
+  })))));
+}
+function AwardResultsReport({submissions}){const awarded=submissions.filter(s=>s.award);if(awarded.length===0)return null;const groups=Object.values(CATS).map(c=>({cat:c,items:AWARD_RANKS.map(rank=>({rank,subs:awarded.filter(s=>s.main===c.key&&s.award===rank)})).filter(g=>g.subs.length>0)})).filter(g=>g.items.length>0);const buildHtml=()=>{let html=`<h1>ผลการตัดสินผลงานวิชาการ<br/>การประชุมวิชาการสมาคมหมออนามัยสกลนคร ประจำปี 2569</h1>`;groups.forEach(g=>{html+=`<h2>${g.cat.label}</h2><table><tr><th>รางวัล</th><th>ชื่อ-สกุล</th><th>ชื่อผลงาน</th><th>หน่วยบริการ</th></tr>`;g.items.forEach(it=>{it.subs.forEach((s,idx)=>{html+=`<tr>${idx===0?`<td rowspan="${it.subs.length}">${it.rank}</td>`:""}<td>${s.name}</td><td>${s.title}</td><td>${s.unit}</td></tr>`;});});html+=`</table>`;});return html;};return/*#__PURE__*/React.createElement("div",{className:"award-report-print-area",style:{background:"#fff",border:"1px solid var(--border)",borderRadius:16,padding:22,marginTop:26}},/*#__PURE__*/React.createElement("style",null,`
         @media print {
           body * { visibility: hidden; }
           .award-report-print-area, .award-report-print-area * { visibility: visible; }
